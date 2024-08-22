@@ -4250,8 +4250,8 @@ void Simulator::LoadAcquireRCpcUnscaledOffsetHelper(const Instruction* instr) {
 
   WriteRegister<T1>(rt, static_cast<T1>(value));
 
-  // Approximate load-acquire by issuing a full barrier after the load.
-  __sync_synchronize();
+  // Load-acquire.
+  std::atomic_thread_fence(std::memory_order_acquire);
 
   LogRead(rt, GetPrintRegisterFormat(element_size), address);
 }
@@ -4275,8 +4275,8 @@ void Simulator::StoreReleaseUnscaledOffsetHelper(const Instruction* instr) {
     VIXL_ALIGNMENT_EXCEPTION();
   }
 
-  // Approximate store-release by issuing a full barrier after the load.
-  __sync_synchronize();
+  // Store-release.
+  std::atomic_thread_fence(std::memory_order_release);
 
   if (!MemWrite<T>(address, ReadRegister<T>(rt))) return;
 
@@ -4721,14 +4721,14 @@ void Simulator::CompareAndSwapHelper(const Instruction* instr) {
   VIXL_DEFINE_OR_RETURN(data, MemRead<T>(address));
 
   if (is_acquire) {
-    // Approximate load-acquire by issuing a full barrier after the load.
-    __sync_synchronize();
+    // Load-acquire.
+    std::atomic_thread_fence(std::memory_order_acquire);
   }
 
   if (data == comparevalue) {
     if (is_release) {
-      // Approximate store-release by issuing a full barrier before the store.
-      __sync_synchronize();
+      // Store-release.
+      std::atomic_thread_fence(std::memory_order_release);
     }
     if (!MemWrite<T>(address, newvalue)) return;
     LogWrite(rt, GetPrintRegisterFormatForSize(element_size), address);
@@ -4770,16 +4770,16 @@ void Simulator::CompareAndSwapPairHelper(const Instruction* instr) {
   VIXL_DEFINE_OR_RETURN(data_high, MemRead<T>(address2));
 
   if (is_acquire) {
-    // Approximate load-acquire by issuing a full barrier after the load.
-    __sync_synchronize();
+    // Load-acquire.
+    std::atomic_thread_fence(std::memory_order_acquire);
   }
 
   bool same =
       (data_high == comparevalue_high) && (data_low == comparevalue_low);
   if (same) {
     if (is_release) {
-      // Approximate store-release by issuing a full barrier before the store.
-      __sync_synchronize();
+      // Store-release.
+      std::atomic_thread_fence(std::memory_order_release);
     }
 
     if (!MemWrite<T>(address, newvalue_low)) return;
@@ -5008,8 +5008,8 @@ void Simulator::VisitLoadStoreExclusive(const Instruction* instr) {
         }
 
         if (is_acquire_release) {
-          // Approximate load-acquire by issuing a full barrier after the load.
-          __sync_synchronize();
+          // Load-acquire and store-release.
+          std::atomic_thread_fence(std::memory_order_acq_rel);
         }
 
         PrintRegisterFormat format = GetPrintRegisterFormatForSize(reg_size);
@@ -5019,9 +5019,8 @@ void Simulator::VisitLoadStoreExclusive(const Instruction* instr) {
         }
       } else {
         if (is_acquire_release) {
-          // Approximate store-release by issuing a full barrier before the
-          // store.
-          __sync_synchronize();
+          // Load-acquire and store-release.
+          std::atomic_thread_fence(std::memory_order_acq_rel);
         }
 
         bool do_store = true;
@@ -5113,8 +5112,8 @@ void Simulator::AtomicMemorySimpleHelper(const Instruction* instr) {
   VIXL_DEFINE_OR_RETURN(data, MemRead<T>(address));
 
   if (is_acquire) {
-    // Approximate load-acquire by issuing a full barrier after the load.
-    __sync_synchronize();
+    // Load-acquire.
+    std::atomic_thread_fence(std::memory_order_acquire);
   }
 
   T result = 0;
@@ -5147,8 +5146,8 @@ void Simulator::AtomicMemorySimpleHelper(const Instruction* instr) {
   }
 
   if (is_release) {
-    // Approximate store-release by issuing a full barrier before the store.
-    __sync_synchronize();
+    // Store-release.
+    std::atomic_thread_fence(std::memory_order_release);
   }
 
   WriteRegister<T>(rt, data, NoRegLog);
@@ -5182,13 +5181,13 @@ void Simulator::AtomicMemorySwapHelper(const Instruction* instr) {
   VIXL_DEFINE_OR_RETURN(data, MemRead<T>(address));
 
   if (is_acquire) {
-    // Approximate load-acquire by issuing a full barrier after the load.
-    __sync_synchronize();
+    // Load-acquire.
+    std::atomic_thread_fence(std::memory_order_acquire);
   }
 
   if (is_release) {
-    // Approximate store-release by issuing a full barrier before the store.
-    __sync_synchronize();
+    // Store-release.
+    std::atomic_thread_fence(std::memory_order_release);
   }
   if (!MemWrite<T>(address, ReadRegister<T>(rs))) return;
 
@@ -5213,8 +5212,8 @@ void Simulator::LoadAcquireRCpcHelper(const Instruction* instr) {
 
   WriteRegister<T>(rt, value);
 
-  // Approximate load-acquire by issuing a full barrier after the load.
-  __sync_synchronize();
+  // Load-acquire.
+  std::atomic_thread_fence(std::memory_order_acquire);
 
   LogRead(rt, GetPrintRegisterFormatForSize(element_size), address);
 }
@@ -7050,7 +7049,7 @@ void Simulator::VisitSystem(const Instruction* instr) {
     case "dsb_bo_barriers"_h:
     case "dmb_bo_barriers"_h:
     case "isb_bi_barriers"_h:
-      __sync_synchronize();
+      std::atomic_thread_fence(std::memory_order_seq_cst);
       break;
     case "sys_cr_systeminstrs"_h: {
       uint64_t rt = ReadXRegister(instr->GetRt());
