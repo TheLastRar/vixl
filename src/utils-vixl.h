@@ -565,7 +565,7 @@ T ReverseBytes(T value, int block_bytes_log2) {
   uint8_t bytes[8];
   uint64_t mask = UINT64_C(0xff00000000000000);
   for (int i = 7; i >= 0; i--) {
-    bytes[i] = (static_cast<uint64_t>(value) & mask) >> (i * 8);
+    bytes[i] = static_cast<uint8_t>((static_cast<uint64_t>(value) & mask) >> (i * 8));
     mask >>= 8;
   }
 

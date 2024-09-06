@@ -34,6 +34,12 @@ using namespace vixl::aarch64;
 
 #define __ masm->
 
+std::linear_congruential_engine<uint64_t,
+                                0x5DEECE66D,
+                                0xB,
+                                static_cast<uint64_t>(1) << 48>
+  rand_gen_;
+
 class InstructionReporter : public DecoderVisitor {
  public:
   InstructionReporter() : DecoderVisitor(kNonConstVisitor) {}
@@ -54,13 +60,15 @@ Instr Mutate(Instr base) {
   while ((result == base) || (result == 0)) {
     // Flip two bits somewhere in the most-significant 27.
     for (int i = 0; i < 2; i++) {
-      uint32_t pos = 5 + ((lrand48() >> 20) % 27);
+      // [0, 2^31] 
+      uint32_t pos = 5 + (((rand_gen_() >> 17) >> 20) % 27);
       result = result ^ (1 << pos);
     }
 
     // Always flip one of the low five bits, as that's where the destination
     // register is often encoded.
-    uint32_t dst_pos = (lrand48() >> 20) % 5;
+    // [0, 2^31] 
+    uint32_t dst_pos = ((rand_gen_() >> 17) >> 20) % 5;
     result = result ^ (1 << dst_pos);
   }
   return result;
@@ -133,7 +141,8 @@ int main(int argc, char **argv) {
     VIXL_ASSERT(argc == i);
   }
 
-  srand48(42);
+  uint64_t seed = (0x330e + (42 << 16));
+  rand_gen_.seed(seed);
 
   MacroAssembler masm;
   masm.GetCPUFeatures()->Combine(CPUFeatures::kSVE);
@@ -200,7 +209,7 @@ int main(int argc, char **argv) {
       cmdline_encoding = 0;
     } else if (useful_insts.empty() || random_only || (miss_count > 10000)) {
       // LCG-random instruction.
-      inst = static_cast<Instr>(mrand48());
+      inst = static_cast<Instr>(rand_gen_());
     } else {
       // Instruction based on mutation of last successful instruction.
       inst = Mutate(useful_insts.back().inst);
@@ -298,7 +307,7 @@ int main(int argc, char **argv) {
   printf("  // state = 0x%08x\n\n", initial_state_vl[128]);
 
   printf("  {\n");
-  printf("    ExactAssemblyScope scope(&masm, %lu * kInstructionSize);\n",
+  printf("    ExactAssemblyScope scope(&masm, %" PRIu64 " * kInstructionSize);\n",
          useful_insts.size());
   for (InstrData &i : useful_insts) {
     printf("    __ dci(0x%08x);  // %s\n", i.inst, i.disasm.c_str());

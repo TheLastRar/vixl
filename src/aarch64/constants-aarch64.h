@@ -313,7 +313,7 @@ enum FlagsUpdate {
   LeaveFlags = 0
 };
 
-enum StatusFlags {
+enum StatusFlags : uint32_t {
   NoFlag    = 0,
 
   // Derive the flag combinations from the system register bit descriptions.

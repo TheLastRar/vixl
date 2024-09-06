@@ -24,6 +24,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <random>
 #include <stdlib.h>
 
 #include "test-runner.h"
@@ -68,8 +69,8 @@ template <typename MacroAssembler, typename UseScratchRegisterScope>
 class PerfectNestingTestHelper {
  public:
   explicit PerfectNestingTestHelper(MacroAssembler* masm) : masm_(masm) {
-    uint16_t seed[3] = {4, 5, 6};
-    seed48(seed);
+    uint64_t seed = (4 + (5 << 16) + (static_cast<uint64_t>(6) << 32));
+    rand_gen_.seed(seed);
   }
   void Run() {
     UseScratchRegisterScope* top_scope =
@@ -83,7 +84,7 @@ class PerfectNestingTestHelper {
   int Run(int depth) {
     // As the depth increases, the probability of recursion decreases.
     // At depth = kDepthLimit, we never recurse.
-    int max_children = static_cast<int>(std::abs(mrand48()) % kDepthLimit);
+    int max_children = std::abs(static_cast<int>(rand_gen_()) % kDepthLimit);
     int children = std::max(0, max_children - depth);
     int descendents = children;
     while (children-- > 0) {
@@ -98,6 +99,12 @@ class PerfectNestingTestHelper {
   MacroAssembler* masm_;
   static const int kDepthLimit = 12;
   static const int kMinimumDescendentScopeCount = 10000;
+
+  std::linear_congruential_engine<uint64_t,
+                                  0x5DEECE66D,
+                                  0xB,
+                                  static_cast<uint64_t>(1) << 48>
+    rand_gen_;
 };
 
 #ifdef VIXL_INCLUDE_TARGET_AARCH32

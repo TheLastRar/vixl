@@ -74,9 +74,58 @@ top_level_targets = VIXLTargets()
 # Store all the options in a dictionary.
 # The SConstruct will check the build variables and construct the build
 # environment as appropriate.
-options = {
+options_all = { #TODO, make used
+#   'build_option:value' : {
+#     'environment_key' : 'values to append'
+#     },
+    'negative_testing:on' : {
+      'CCFLAGS' : ['-DVIXL_NEGATIVE_TESTING']
+      },
+    'code_buffer_allocator:mmap' : {
+      'CCFLAGS' : ['-DVIXL_CODE_BUFFER_MMAP']
+      },
+    'code_buffer_allocator:malloc' : {
+      'CCFLAGS' : ['-DVIXL_CODE_BUFFER_MALLOC']
+      },
+    'implicit_checks:on' : {
+      'CCFLAGS' : ['-DVIXL_ENABLE_IMPLICIT_CHECKS'],
+      }
+    }
+
+options_msvc = { #TODO, make used
     'all' : { # Unconditionally processed.
-      'CCFLAGS' : ['-Wall',
+      'CCFLAGS' : ['/W3',
+                   '/WX',
+                   '/permissive-',
+                   '/bigobj'], # Need for tests
+       'LINKFLAGS' : ['/WX'],
+      'CPPPATH' : [config.dir_src_vixl]
+      },
+#   'build_option:value' : {
+#     'environment_key' : 'values to append'
+#     },
+    'mode:debug' : {
+      'CCFLAGS' : ['-DVIXL_DEBUG', '/Od']
+      },
+    'mode:release' : {
+      'CCFLAGS' : ['/O2'],
+      },
+    'simulator:aarch64' : {
+      'CCFLAGS' : ['-DVIXL_INCLUDE_SIMULATOR_AARCH64'],
+      },
+    'symbols:on' : {
+      'CCFLAGS' : ['/Zi'],
+      'LINKFLAGS' : ['/DEBUG']
+      },
+#   No undefined sanitizer
+#   https://learn.microsoft.com/en-us/cpp/build/reference/fsanitize
+#   No code coverage
+#   https://developercommunity.visualstudio.com/t/is-it-possible-to-generate-source-code-coverage-wi/1309843
+    }
+
+options_gnu = { #TODO, make used
+    'all' : { # Unconditionally processed.
+      'CCFLAGS' : ['-W3',
                    '-Werror',
                    '-fdiagnostics-show-option',
                    '-Wextra',
@@ -105,6 +154,42 @@ options = {
     'symbols:on' : {
       'CCFLAGS' : ['-g'],
       'LINKFLAGS' : ['-g']
+      },
+    'ubsan:on' : {
+      'CCFLAGS': ['-fsanitize=undefined'],
+      'LINKFLAGS': ['-fsanitize=undefined']
+      },
+    'coverage:on' : {
+      'CCFLAGS': ['-fprofile-instr-generate', '-fcoverage-mapping'],
+      'LINKFLAGS': ['-fprofile-instr-generate', '-fcoverage-mapping']
+      }
+    }
+
+
+options = {
+    'all' : { # Unconditionally processed.
+      'CCFLAGS' : ['-W3',
+                   '/permissive-',
+                   '/bigobj'],
+      'CPPPATH' : [config.dir_src_vixl]
+      },
+#   'build_option:value' : {
+#     'environment_key' : 'values to append'
+#     },
+    'mode:debug' : {
+      'CCFLAGS' : ['-DVIXL_DEBUG', '-Od']
+      },
+    'mode:release' : {
+      'CCFLAGS' : ['/O2'],
+      },
+    'simulator:aarch64' : {
+      'CCFLAGS' : ['-DVIXL_INCLUDE_SIMULATOR_AARCH64',
+                   '-pthread'],
+      'LINKFLAGS' : ['-pthread']
+      },
+    'symbols:on' : {
+      'CCFLAGS' : ['/DEBUG'],
+      'LINKFLAGS' : ['/DEBUG']
       },
     'negative_testing:on' : {
       'CCFLAGS' : ['-DVIXL_NEGATIVE_TESTING']
@@ -367,7 +452,7 @@ def ProcessBuildOptions(env):
     default = value[0]
     handler = value[1]
     if env_dict.get(key) == default:
-      handler(env_dict)
+      handler(env)
 
   # Second, run the series of validators, to check for errors.
   for _, value in vars_default_handlers.items():
@@ -422,14 +507,17 @@ def ConfigureEnvironmentForCompiler(env):
 
 def ConfigureEnvironment(env):
   RetrieveEnvironmentVariables(env)
-  env['compiler'] = env['CXX']
+  env['compiler'] = env.subst('$CXX')
   if env['compiler_wrapper'] != '':
-    env['CXX'] = env['compiler_wrapper'] + ' ' + env['CXX']
-    env['CC'] = env['compiler_wrapper'] + ' ' + env['CC']
+    env['CXX'] = env['compiler_wrapper'] + ' ' + env.subst('$CXX')
+    env['CC'] = env['compiler_wrapper'] + ' ' + env.subst('$CC')
   env['host_arch'] = util.GetHostArch(env)
   ProcessBuildOptions(env)
   if 'std' in env:
-    env.Append(CPPFLAGS = ['-std=' + env['std']])
+    if env['compiler'] == 'cl':
+      env.Append(CPPFLAGS = ['/std:' + env['std'], '/Zc:__cplusplus', '/EHsc'])
+    else:
+      env.Append(CPPFLAGS = ['-std=' + env['std']])
     std_path = env['std']
   ConfigureEnvironmentForCompiler(env)
 
@@ -439,7 +527,10 @@ def TargetBuildDir(env):
   # full build when an option changes.
   build_dir = config.dir_build
   for option in options_influencing_build_path:
-    option_value = ''.join(env[option]) if option in env else ''
+    if option == 'compiler':
+      option_value = ''.join(os.path.basename(env[option]))
+    else:
+      option_value = ''.join(env[option]) if option in env else ''
     build_dir = join(build_dir, option + '_'+ option_value)
   return build_dir
 
@@ -454,9 +545,12 @@ def VIXLLibraryTarget(env):
   build_dir = TargetBuildDir(env)
   # Create a link to the latest build directory.
   # Use `-r` to avoid failure when `latest` exists and is a directory.
-  subprocess.check_call(["rm", "-rf", config.dir_build_latest])
+  # subprocess.check_call(["rm", "-rf", config.dir_build_latest])
+  if os.path.exists(config.dir_build_latest):
+    os.unlink(config.dir_build_latest)
   util.ensure_dir(build_dir)
-  subprocess.check_call(["ln", "-s", build_dir, config.dir_build_latest])
+  #subprocess.check_call(["ln", "-s", build_dir, config.dir_build_latest])
+  os.symlink(build_dir, config.dir_build_latest)
   # Source files are in `src` and in `src/aarch64/`.
   variant_dir_vixl = PrepareVariantDir(join('src'), build_dir)
   sources = [Glob(join(variant_dir_vixl, '*.cc'))]
@@ -478,6 +572,11 @@ env = Environment(variables = vars,
                       'Markdown': Builder(action = 'markdown $SOURCE > $TARGET',
                                           suffix = '.html')
                   }, ENV = os.environ)
+
+
+#print(env.Dump())
+#env['CXXFLAGS'] = ""
+#print(env['CXXFLAGS'])
 # Abort the build if any command line option is unknown or invalid.
 unknown_build_options = vars.UnknownVariables()
 if unknown_build_options:

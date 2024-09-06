@@ -24,9 +24,9 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <chrono>
 #include <stdint.h>
 #include <stdio.h>
-#include <sys/time.h>
 
 #include "aarch32/constants-aarch32.h"
 #include "aarch32/instructions-aarch32.h"
@@ -45,8 +45,7 @@ static const int kDefaultLiteralCount = 100;
 void benchmark(int iterations, int literals, InstructionSet isa) {
   const int buffer_size = 256 * KBytes;
 
-  timeval start;
-  gettimeofday(&start, NULL);
+  std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
   MacroAssembler masm(buffer_size);
   masm.UseInstructionSet(isa);
 
@@ -61,10 +60,8 @@ void benchmark(int iterations, int literals, InstructionSet isa) {
     }
   }
 
-  timeval end;
-  gettimeofday(&end, NULL);
-  double delta = (end.tv_sec - start.tv_sec) +
-                 static_cast<double>(end.tv_usec - start.tv_usec) / 1000000;
+  std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+  double delta = std::chrono::duration<double>(end - start).count();
   printf("%s: time for %d iterations: %gs\n",
          isa == T32 ? "T32" : "A32",
          iterations,

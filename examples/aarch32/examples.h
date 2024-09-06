@@ -30,7 +30,14 @@
 extern "C" {
 #include <stdint.h>
 #ifndef VIXL_INCLUDE_SIMULATOR_AARCH32
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
+#include <Memoryapi.h>
+#else
 #include <sys/mman.h>
+#endif
 #endif
 }
 
@@ -44,6 +51,19 @@ extern "C" {
 #ifndef VIXL_INCLUDE_SIMULATOR_AARCH32
 class ExecutableMemory {
  public:
+#ifdef _WIN32
+ ExecutableMemory(const byte* code_start, size_t size)
+      : size_(size),
+        buffer_(reinterpret_cast<byte*>(VirtualAlloc(NULL,
+                                                     size,
+                                                     MEM_RESERVE | MEM_COMMIT
+                                                     PAGE_EXECUTE_READWRITE))) {
+    VIXL_ASSERT(reinterpret_cast<intptr_t>(buffer_) != 0);
+    memcpy(buffer_, code_start, size_);
+    FlushInstructionCache(GetCurrentProcess(), buffer_, size_);
+  }
+  ~ExecutableMemory() { VirtualFree(buffer_, 0, MEM_RELEASE); }
+#else
   ExecutableMemory(const byte* code_start, size_t size)
       : size_(size),
         buffer_(reinterpret_cast<byte*>(mmap(NULL,
@@ -57,7 +77,7 @@ class ExecutableMemory {
     __builtin___clear_cache(buffer_, buffer_ + size_);
   }
   ~ExecutableMemory() { munmap(buffer_, size_); }
-
+#endif
   template <typename T>
   T GetEntryPoint(const Label& entry_point, InstructionSet isa) const {
     int32_t location = entry_point.GetLocation();

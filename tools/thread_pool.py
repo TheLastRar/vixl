@@ -50,6 +50,6 @@ def Multithread(function, list_of_args, num_threads=1, init_function=None):
     # The '.get(9999999)' is a workaround to allow killing the test script with
     # ctrl+C from the shell. This bug is documented at
     # http://bugs.python.org/issue8296.
-    pool.map_async(function, list_of_args).get(9999999)
+    pool.map_async(function, list_of_args)
     pool.close()
     pool.join()

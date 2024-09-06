@@ -26,6 +26,7 @@
 
 #include <cstdio>
 #include <iostream>
+#include <random>
 #include <string>
 
 #include "test-runner.h"
@@ -42,26 +43,26 @@ namespace aarch32 {
 
 #ifdef VIXL_INCLUDE_TARGET_A32_ONLY
 #define TEST_T32(Name) \
-  void Test##Name##Impl(InstructionSet isa __attribute__((unused)))
+  void Test##Name##Impl(InstructionSet isa [[maybe_unused]])
 #else
 // Tests declared with this macro will only target T32.
 #define TEST_T32(Name)                                          \
   void Test##Name##Impl(InstructionSet isa);                    \
   void Test##Name() { Test##Name##Impl(T32); }                  \
   Test test_##Name(STRINGIFY(AARCH32_T32_##Name), &Test##Name); \
-  void Test##Name##Impl(InstructionSet isa __attribute__((unused)))
+  void Test##Name##Impl([[maybe_unused]] InstructionSet isa)
 #endif
 
 #ifdef VIXL_INCLUDE_TARGET_T32_ONLY
 #define TEST_A32(Name) \
-  void Test##Name##Impl(InstructionSet isa __attribute__((unused)))
+  void Test##Name##Impl([[maybe_unused]] InstructionSet isa)
 #else
 // Test declared with this macro will only target A32.
 #define TEST_A32(Name)                                          \
   void Test##Name##Impl(InstructionSet isa);                    \
   void Test##Name() { Test##Name##Impl(A32); }                  \
   Test test_##Name(STRINGIFY(AARCH32_A32_##Name), &Test##Name); \
-  void Test##Name##Impl(InstructionSet isa __attribute__((unused)))
+  void Test##Name##Impl([[maybe_unused]] InstructionSet isa)
 #endif
 
 // Tests declared with this macro will be run twice: once targeting A32 and
@@ -80,7 +81,7 @@ namespace aarch32 {
     printf(" > T32 done\n");                                    \
   }                                                             \
   Test test_##Name(STRINGIFY(AARCH32_ASM_##Name), &Test##Name); \
-  void Test##Name##Impl(InstructionSet isa __attribute__((unused)))
+  void Test##Name##Impl([[maybe_unused]] InstructionSet isa)
 #endif
 
 // Tests declared with this macro are not expected to use any provided test
@@ -3532,8 +3533,12 @@ TEST_T32(near_branch_fuzz) {
   SETUP();
   START();
 
-  uint16_t seed[3] = {1, 2, 3};
-  seed48(seed);
+  uint64_t seed = (1 + (2 << 16) + (static_cast<uint64_t>(3) << 32));
+  std::linear_congruential_engine<uint64_t,
+                                  0x5DEECE66D,
+                                  0xB,
+                                  static_cast<uint64_t>(1) << 48>
+    rand_gen(seed);
 
   const int label_count = 31;
   Label* l;
@@ -3560,8 +3565,8 @@ TEST_T32(near_branch_fuzz) {
       __ Mov(r0, 1);
 
       for (;;) {
-        uint32_t inst_case = static_cast<uint32_t>(mrand48()) % case_count;
-        uint32_t label_index = static_cast<uint32_t>(mrand48()) % label_count;
+        uint32_t inst_case = static_cast<uint32_t>(rand_gen()) % case_count;
+        uint32_t label_index = static_cast<uint32_t>(rand_gen()) % label_count;
 
         switch (inst_case) {
           case 0:  // Bind.
@@ -3628,8 +3633,12 @@ static void NearBranchAndLiteralFuzzHelper(InstructionSet isa,
   SETUP();
   START();
 
-  uint16_t seed[3] = {1, 2, 3};
-  seed48(seed);
+  uint64_t seed = (1 + (2 << 16) + (static_cast<uint64_t>(3) << 32));
+  std::linear_congruential_engine<uint64_t,
+                                  0x5DEECE66D,
+                                  0xB,
+                                  static_cast<uint64_t>(1) << 48>
+    rand_gen(seed);
 
   const int label_count = 15;
   const int literal_count = 31;
@@ -3689,10 +3698,10 @@ static void NearBranchAndLiteralFuzzHelper(InstructionSet isa,
 
         for (;;) {
           uint32_t inst_case =
-              (static_cast<uint32_t>(mrand48()) % window) + ratio;
-          uint32_t label_index = static_cast<uint32_t>(mrand48()) % label_count;
+              (static_cast<uint32_t>(rand_gen()) % window) + ratio;
+          uint32_t label_index = static_cast<uint32_t>(rand_gen()) % label_count;
           uint32_t literal_index =
-              static_cast<uint32_t>(mrand48()) % literal_count;
+              static_cast<uint32_t>(rand_gen()) % literal_count;
 
           if (inst_case == ratio) {
             if (!labels[label_index].IsBound()) {

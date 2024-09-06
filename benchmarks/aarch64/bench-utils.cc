@@ -57,21 +57,21 @@ uint64_t BenchCodeGenerator::GetRandomBits(int bits) {
   uint64_t result = 0;
 
   while (bits >= 32) {
-    // For big chunks, call jrand48 directly.
-    result = (result << 32) | jrand48(rand_state_);  // [-2^31, 2^31]
+    // For big chunks, call rng directly.
+    result = (result << 32) | static_cast<uint32_t>(rand_gen_());  // [-2^31, 2^31]
     bits -= 32;
   }
   if (bits == 0) return result;
 
   // We often only want a few bits at a time, so use stored entropy to avoid
-  // frequent calls to jrand48.
+  // frequently generating random numbers.
 
   if (bits > rnd_bits_) {
     // We want more bits than we have.
     result = (result << rnd_bits_) | rnd_;
     bits -= rnd_bits_;
 
-    rnd_ = static_cast<uint32_t>(jrand48(rand_state_));  // [-2^31, 2^31]
+    rnd_ = static_cast<uint32_t>(rand_gen_());  // [-2^31, 2^31]
     rnd_bits_ = 32;
   }
 

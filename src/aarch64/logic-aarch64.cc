@@ -2539,10 +2539,10 @@ LogicVRegister Simulator::ext(VectorFormat vform,
   uint8_t result[kZRegMaxSizeInBytes] = {};
   int lane_count = LaneCountFromFormat(vform);
   for (int i = 0; i < lane_count - index; ++i) {
-    result[i] = src1.Uint(vform, i + index);
+    result[i] = static_cast<uint8_t>(src1.Uint(vform, i + index));
   }
   for (int i = 0; i < index; ++i) {
-    result[lane_count - index + i] = src2.Uint(vform, i);
+    result[lane_count - index + i] = static_cast<uint8_t>(src2.Uint(vform, i));
   }
   dst.ClearForWrite(vform);
   for (int i = 0; i < lane_count; ++i) {
@@ -4185,7 +4185,7 @@ LogicVRegister Simulator::sqrdmlash_d(VectorFormat vform,
 
     // Arithmetic shift the whole value right by `esize - 1` bits.
     accum.second = (accum.first << 1) | (accum.second >> (esize - 1));
-    accum.first = -(accum.first >> (esize - 1));
+    accum.first = UnsignedNegate(accum.first >> (esize - 1));
 
     // Perform saturation.
     bool is_pos = (accum.first == 0) ? true : false;
@@ -4573,8 +4573,8 @@ template <typename T>
 T Simulator::FPMulAdd(T a, T op1, T op2) {
   T result = FPProcessNaNs3(a, op1, op2);
 
-  T sign_a = copysign(1.0, a);
-  T sign_prod = copysign(1.0, op1) * copysign(1.0, op2);
+  T sign_a = static_cast<T>(copysign(1.0, a));
+  T sign_prod = static_cast<T>(copysign(1.0, op1) * copysign(1.0, op2));
   bool isinf_prod = IsInf(op1) || IsInf(op2);
   bool operation_generates_nan =
       (IsInf(op1) && (op2 == 0.0)) ||                     // inf * 0.0
@@ -4600,7 +4600,7 @@ T Simulator::FPMulAdd(T a, T op1, T op2) {
   // Work around broken fma implementations for exact zero results: The sign of
   // exact 0.0 results is positive unless both a and op1 * op2 are negative.
   if (((op1 == 0.0) || (op2 == 0.0)) && (a == 0.0)) {
-    return ((sign_a < T(0.0)) && (sign_prod < T(0.0))) ? -0.0 : 0.0;
+    return ((sign_a < T(0.0)) && (sign_prod < T(0.0))) ? T{-0.0} : T(0.0);
   }
 
   result = FusedMultiplyAdd(op1, op2, a);
@@ -4609,7 +4609,7 @@ T Simulator::FPMulAdd(T a, T op1, T op2) {
   // Work around broken fma implementations for rounded zero results: If a is
   // 0.0, the sign of the result is the sign of op1 * op2 before rounding.
   if ((a == 0.0) && (result == 0.0)) {
-    return copysign(0.0, sign_prod);
+    return static_cast<T>(copysign(0.0, sign_prod));
   }
 
   return result;
@@ -4671,9 +4671,9 @@ T Simulator::FPMax(T a, T b) {
 template <typename T>
 T Simulator::FPMaxNM(T a, T b) {
   if (IsQuietNaN(a) && !IsQuietNaN(b)) {
-    a = kFP64NegativeInfinity;
+    a = static_cast<T>(kFP64NegativeInfinity);
   } else if (!IsQuietNaN(a) && IsQuietNaN(b)) {
-    b = kFP64NegativeInfinity;
+    b = static_cast<T>(kFP64NegativeInfinity);
   }
 
   T result = FPProcessNaNs(a, b);
@@ -4698,9 +4698,9 @@ T Simulator::FPMin(T a, T b) {
 template <typename T>
 T Simulator::FPMinNM(T a, T b) {
   if (IsQuietNaN(a) && !IsQuietNaN(b)) {
-    a = kFP64PositiveInfinity;
+    a = static_cast<T>(kFP64PositiveInfinity);
   } else if (!IsQuietNaN(a) && IsQuietNaN(b)) {
-    b = kFP64PositiveInfinity;
+    b = static_cast<T>(kFP64PositiveInfinity);
   }
 
   T result = FPProcessNaNs(a, b);
@@ -4775,7 +4775,7 @@ int32_t Simulator::FPToFixedJS(double value) {
       (value == kFP64NegativeInfinity)) {
     // +/- zero and infinity all return zero, however -0 and +/- Infinity also
     // unset the Z-flag.
-    result = 0.0;
+    result = 0;
     if ((value != 0.0) || std::signbit(value)) {
       Z = 0;
     }
@@ -5833,7 +5833,7 @@ LogicVRegister Simulator::frint(VectorFormat vform,
   } else if (LaneSizeInBitsFromFormat(vform) == kSRegSize) {
     for (int i = 0; i < LaneCountFromFormat(vform); i++) {
       float input = src.Float<float>(i);
-      float rounded = FPRoundInt(input, rounding_mode, frint_mode);
+      float rounded = static_cast<float>(FPRoundInt(input, rounding_mode, frint_mode));
 
       if (inexact_exception && !IsNaN(input) && (input != rounded)) {
         FPProcessException();
@@ -8240,10 +8240,10 @@ static uint8_t GalMul(int table, uint64_t x) {
       return ffmul0e[x];
     case 0:
       // Case 0 indicates no table lookup, used for some forward mix stages.
-      return x;
+      return static_cast<uint8_t>(x);
     default:
       VIXL_UNREACHABLE();
-      return x;
+      return static_cast<uint8_t>(x);
   }
 }
 

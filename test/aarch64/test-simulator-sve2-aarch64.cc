@@ -30,8 +30,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <functional>
-#include <sys/mman.h>
-#include <unistd.h>
 
 #include "test-runner.h"
 #include "test-utils.h"
