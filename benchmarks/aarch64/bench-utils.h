@@ -43,13 +43,15 @@ class BenchTimer {
 
   double GetElapsedSeconds() const {
     std::chrono::high_resolution_clock::duration elapsed = GetElapsed();
-    return std::chrono::duration<double>(elapsed).count(); // default unit is seconds
+    return std::chrono::duration<double>(elapsed)
+        .count();  // default unit is seconds
   }
 
   bool HasRunFor(uint32_t seconds) {
     std::chrono::high_resolution_clock::duration elapsed = GetElapsed();
     VIXL_ASSERT(elapsed.count() >= 0);
-    return std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() >= seconds;
+    return std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() >=
+           seconds;
   }
 
  private:

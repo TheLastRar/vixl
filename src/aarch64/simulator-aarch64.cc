@@ -1058,7 +1058,8 @@ vixl_uint128_t Simulator::Mul64(uint64_t x, uint64_t y) {
   vixl_uint128_t result = Add128(a, b);
   result = Add128(result, c);
   result = Add128(result, d);
-  return neg_result ? std::make_pair(UnsignedNegate(result.first) - 1, UnsignedNegate(result.second))
+  return neg_result ? std::make_pair(UnsignedNegate(result.first) - 1,
+                                     UnsignedNegate(result.second))
                     : result;
 }
 
@@ -3911,7 +3912,8 @@ void Simulator::VisitUnconditionalBranchToRegister(const Instruction* instr) {
       } else if ((addr != 0) && (addr != expected_lr)) {
         snprintf(msg,
                  sizeof(msg),
-                 "GCS mismatch: lr = 0x%016" PRIx64 ", gcs = 0x%016" PRIx64 "\n",
+                 "GCS mismatch: lr = 0x%016" PRIx64 ", gcs = 0x%016" PRIx64
+                 "\n",
                  addr,
                  expected_lr);
         ReportGCSFailure(msg);
@@ -15087,7 +15089,8 @@ void Simulator::DoRuntimeCall(const Instruction* instr) {
       } else if ((addr != 0) && (addr != expected_lr)) {
         snprintf(msg,
                  sizeof(msg),
-                 "GCS mismatch: lr = 0x%016" PRIx64 ", gcs = 0x%016" PRIx64 "\n",
+                 "GCS mismatch: lr = 0x%016" PRIx64 ", gcs = 0x%016" PRIx64
+                 "\n",
                  addr,
                  expected_lr);
         ReportGCSFailure(msg);

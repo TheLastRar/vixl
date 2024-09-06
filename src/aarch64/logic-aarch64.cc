@@ -5833,7 +5833,8 @@ LogicVRegister Simulator::frint(VectorFormat vform,
   } else if (LaneSizeInBitsFromFormat(vform) == kSRegSize) {
     for (int i = 0; i < LaneCountFromFormat(vform); i++) {
       float input = src.Float<float>(i);
-      float rounded = static_cast<float>(FPRoundInt(input, rounding_mode, frint_mode));
+      float rounded =
+          static_cast<float>(FPRoundInt(input, rounding_mode, frint_mode));
 
       if (inexact_exception && !IsNaN(input) && (input != rounded)) {
         FPProcessException();

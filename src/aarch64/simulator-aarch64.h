@@ -2926,14 +2926,14 @@ class Simulator : public DecoderVisitor {
     return (addr & ~(UINT64_C(0xf) << 56)) | (tag << 56);
   }
 
-/*
+#if 0
   // Create or remove a mapping with memory protection. Memory attributes such
   // as MTE and BTI are represented by metadata in Simulator.
   void* Mmap(
       void* address, size_t length, int prot, int flags, int fd, off_t offset);
 
   int Munmap(void* address, size_t length, int prot);
-*/
+#endif
 
   // The common CPUFeatures interface with the set of available features.
 

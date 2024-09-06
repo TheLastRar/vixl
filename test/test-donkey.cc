@@ -38,7 +38,7 @@ std::linear_congruential_engine<uint64_t,
                                 0x5DEECE66D,
                                 0xB,
                                 static_cast<uint64_t>(1) << 48>
-  rand_gen_;
+    rand_gen_;
 
 class InstructionReporter : public DecoderVisitor {
  public:
@@ -60,14 +60,14 @@ Instr Mutate(Instr base) {
   while ((result == base) || (result == 0)) {
     // Flip two bits somewhere in the most-significant 27.
     for (int i = 0; i < 2; i++) {
-      // [0, 2^31] 
+      // [0, 2^31]
       uint32_t pos = 5 + (((rand_gen_() >> 17) >> 20) % 27);
       result = result ^ (1 << pos);
     }
 
     // Always flip one of the low five bits, as that's where the destination
     // register is often encoded.
-    // [0, 2^31] 
+    // [0, 2^31]
     uint32_t dst_pos = ((rand_gen_() >> 17) >> 20) % 5;
     result = result ^ (1 << dst_pos);
   }
@@ -307,7 +307,8 @@ int main(int argc, char **argv) {
   printf("  // state = 0x%08x\n\n", initial_state_vl[128]);
 
   printf("  {\n");
-  printf("    ExactAssemblyScope scope(&masm, %" PRIu64 " * kInstructionSize);\n",
+  printf("    ExactAssemblyScope scope(&masm, %" PRIu64
+         " * kInstructionSize);\n",
          useful_insts.size());
   for (InstrData &i : useful_insts) {
     printf("    __ dci(0x%08x);  // %s\n", i.inst, i.disasm.c_str());

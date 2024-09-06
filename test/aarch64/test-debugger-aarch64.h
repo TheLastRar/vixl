@@ -71,10 +71,10 @@ void GenerateDebuggerAsm(MacroAssembler* masm) {
   __ Ret();
 }
 
-#ifdef _WIN32 
-#define CREATE_OSTREAM()                            \
-  char ostream_filename[L_tmpnam];                  \
-  std::tmpnam(ostream_filename);                    \
+#ifdef _WIN32
+#define CREATE_OSTREAM()           \
+  char ostream_filename[L_tmpnam]; \
+  std::tmpnam(ostream_filename);   \
   FILE* output_stream = fopen(ostream_filename, "w")
 #else
 #define CREATE_OSTREAM()                                      \
@@ -92,7 +92,7 @@ void GenerateDebuggerAsm(MacroAssembler* masm) {
   Instruction* start = masm.GetBuffer()->GetStartAddress<Instruction*>(); \
   Decoder decoder;                                                        \
   std::istringstream input_stream;                                        \
-  CREATE_OSTREAM();                                                          \
+  CREATE_OSTREAM();                                                       \
   /* Disassemble the generated code so we can use the addresses later. */ \
   PrintDisassembler disassembler(output_stream);                          \
   disassembler.DisassembleBuffer(start, masm.GetSizeOfCodeGenerated());   \

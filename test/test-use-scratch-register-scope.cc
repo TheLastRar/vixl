@@ -104,7 +104,7 @@ class PerfectNestingTestHelper {
                                   0x5DEECE66D,
                                   0xB,
                                   static_cast<uint64_t>(1) << 48>
-    rand_gen_;
+      rand_gen_;
 };
 
 #ifdef VIXL_INCLUDE_TARGET_AARCH32
