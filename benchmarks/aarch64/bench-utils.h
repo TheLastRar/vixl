@@ -27,10 +27,10 @@
 #ifndef VIXL_AARCH64_BENCH_UTILS_H_
 #define VIXL_AARCH64_BENCH_UTILS_H_
 
+#include <chrono>
 #include <list>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/time.h>
 #include <vector>
 
 #include "globals-vixl.h"
@@ -39,31 +39,26 @@
 
 class BenchTimer {
  public:
-  BenchTimer() { gettimeofday(&start_, NULL); }
+  BenchTimer() { start_ = std::chrono::high_resolution_clock::now(); }
 
   double GetElapsedSeconds() const {
-    timeval elapsed = GetElapsed();
-    double sec = elapsed.tv_sec;
-    double usec = elapsed.tv_usec;
-    return sec + (usec / 1000000.0);
+    std::chrono::high_resolution_clock::duration elapsed = GetElapsed();
+    return std::chrono::duration<double>(elapsed).count(); // default unit is seconds
   }
 
   bool HasRunFor(uint32_t seconds) {
-    timeval elapsed = GetElapsed();
-    VIXL_ASSERT(elapsed.tv_sec >= 0);
-    return static_cast<uint64_t>(elapsed.tv_sec) >= seconds;
+    std::chrono::high_resolution_clock::duration elapsed = GetElapsed();
+    VIXL_ASSERT(elapsed.count() >= 0);
+    return std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() >= seconds;
   }
 
  private:
-  timeval GetElapsed() const {
-    VIXL_ASSERT(timerisset(&start_));
-    timeval now, elapsed;
-    gettimeofday(&now, NULL);
-    timersub(&now, &start_, &elapsed);
-    return elapsed;
+  std::chrono::high_resolution_clock::duration GetElapsed() const {
+    VIXL_ASSERT(start_.time_since_epoch().count() >= 0);
+    return std::chrono::high_resolution_clock::now() - start_;
   }
 
-  timeval start_;
+  std::chrono::high_resolution_clock::time_point start_{};
 };
 
 // Provide a standard command-line interface for all benchmarks.
@@ -175,9 +170,8 @@ class BenchCodeGenerator {
   explicit BenchCodeGenerator(vixl::aarch64::MacroAssembler* masm)
       : masm_(masm), rnd_(0), rnd_bits_(0), call_depth_(0) {
     // Arbitrarily initialise rand_state_ using the behaviour of srand48(42).
-    rand_state_[2] = 0;
-    rand_state_[1] = 42;
-    rand_state_[0] = 0x330e;
+    uint64_t seed = (0x330e + (42 << 16));
+    rand_gen_.seed(seed);
   }
 
   void Generate(size_t min_size_in_bytes);
@@ -242,8 +236,12 @@ class BenchCodeGenerator {
 
   vixl::aarch64::MacroAssembler* masm_;
 
-  // State for *rand48(), used to randomise code generation.
-  unsigned short rand_state_[3];  // NOLINT(google-runtime-int)
+  // linear_congruential_engine, used to randomise code generation.
+  std::linear_congruential_engine<uint64_t,
+                                  0x5DEECE66D,
+                                  0xB,
+                                  static_cast<uint64_t>(1) << 48>
+      rand_gen_;
 
   uint32_t rnd_;
   int rnd_bits_;

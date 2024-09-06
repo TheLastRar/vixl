@@ -26,6 +26,7 @@
 
 #include "test-pool-manager.h"
 
+#include <random>
 #include <stdio.h>
 
 #include "pool-manager-impl.h"
@@ -41,7 +42,15 @@
 
 using namespace vixl;
 
-static int Random() { return static_cast<int>(std::abs(mrand48())); }
+static int Random()
+{
+  static std::linear_congruential_engine<uint64_t,
+                                         0x5DEECE66D,
+                                         0xB,
+                                         static_cast<uint64_t>(1) << 48>
+  rand_gen_(0x330E + (42 << 16));
+  return std::abs(static_cast<int>(rand_gen_()));
+}
 
 static int RandomObjectID(size_t num_objects) { return Random() % num_objects; }
 

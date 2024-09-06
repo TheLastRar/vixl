@@ -3018,8 +3018,14 @@ static void TraceTestHelper(bool coloured_trace,
                             const char* ref_file) {
   MacroAssembler masm(12 * KBytes);
 
+#ifdef _WIN32
+  char trace_stream_filename[L_tmpnam];
+  std::tmpnam(trace_stream_filename);
+  FILE* trace_stream = fopen(trace_stream_filename, "w");
+#else
   char trace_stream_filename[] = "/tmp/vixl-test-trace-XXXXXX";
   FILE* trace_stream = fdopen(mkstemp(trace_stream_filename), "w");
+#endif
 
   Decoder decoder;
   Simulator simulator(&decoder, trace_stream);
@@ -3175,8 +3181,14 @@ static void PrintDisassemblerTestHelper(const char* prefix,
                                         const char* ref_file) {
   MacroAssembler masm(12 * KBytes);
 
+#ifdef _WIN32
+  char trace_stream_filename[L_tmpnam];
+  std::tmpnam(trace_stream_filename);
+  FILE* trace_stream = fopen(trace_stream_filename, "w");
+#else
   char trace_stream_filename[] = "/tmp/vixl-test-trace-XXXXXX";
   FILE* trace_stream = fdopen(mkstemp(trace_stream_filename), "w");
+#endif
 
   // We don't need to execute this code so there's no need for the execution
   // environment setup from TraceTestHelper.

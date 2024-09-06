@@ -26,15 +26,14 @@
 
 extern "C" {
 #ifdef __arm__
+//TODO, can we port this to C++?
 #include <linux/perf_event.h>
+#include <sys/syscall.h>
 #endif
 #include <stdint.h>
 #include <stdio.h>
-#include <sys/ioctl.h>
-#include <sys/syscall.h>
-#include <sys/time.h>
-#include <unistd.h>
 }
+#include <chrono>
 #include <iostream>
 
 #include "aarch32/assembler-aarch32.h"
@@ -9571,36 +9570,34 @@ void Benchmark() {
   TestAssembler assembler;
   {
     int64_t cycles = 0;
-    timeval start;
-    timeval end;
+    std::chrono::high_resolution_clock::time_point start;
+    std::chrono::high_resolution_clock::time_point end;
     {
       PerfScope scope(&cycles);
-      gettimeofday(&start, NULL);
+      start = std::chrono::high_resolution_clock::now();
       Generator generator(&assembler);
       assembler.FinalizeCode();
-      gettimeofday(&end, NULL);
+      end = std::chrono::high_resolution_clock::now();
     }
 
-    double delta = (end.tv_sec - start.tv_sec) +
-                   static_cast<double>(end.tv_usec - start.tv_usec) / 1000000;
+    double delta = std::chrono::duration<double>(end - start).count();
     printf("T32 assembler: time: %gs, cycles: %" PRId64 "\n", delta, cycles);
   }
   {
     PrintDisassembler disassembler(std::cerr);
     int64_t cycles = 0;
-    timeval start;
-    timeval end;
+    std::chrono::high_resolution_clock::time_point start;
+    std::chrono::high_resolution_clock::time_point end;
     {
       PerfScope scope(&cycles);
-      gettimeofday(&start, NULL);
+      start = std::chrono::high_resolution_clock::now();
       disassembler.DisassembleT32Buffer(assembler.GetBuffer()
                                             ->GetStartAddress<uint16_t*>(),
                                         assembler.GetCursorOffset());
-      gettimeofday(&end, NULL);
+      end = std::chrono::high_resolution_clock::now();
     }
 
-    double delta = (end.tv_sec - start.tv_sec) +
-                   static_cast<double>(end.tv_usec - start.tv_usec) / 1000000;
+    double delta = std::chrono::duration<double>(end - start).count();
     printf("T32 disassembler: time: %gs, cycles: %" PRId64 "\n", delta, cycles);
   }
 }

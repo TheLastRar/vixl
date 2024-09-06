@@ -28,10 +28,6 @@
 
 #include <string.h>
 
-extern "C" {
-#include <sys/mman.h>
-}
-
 #include "globals-vixl.h"
 
 #ifdef VIXL_INCLUDE_TARGET_AARCH64

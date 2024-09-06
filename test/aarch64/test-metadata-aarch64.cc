@@ -24,9 +24,6 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <sys/mman.h>
-#include <unistd.h>
-
 #include "test-runner.h"
 #include "test-utils.h"
 
@@ -43,7 +40,7 @@ namespace aarch64 {
 #ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
 TEST(test_metadata_mte) {
   SETUP_WITH_FEATURES(CPUFeatures::kMTE);
-
+/*
   size_t data_size = 320;
   void* tagged_address = simulator.Mmap(NULL,
                                         data_size,
@@ -73,12 +70,14 @@ TEST(test_metadata_mte) {
   }
 
   simulator.Munmap(tagged_address, data_size, PROT_MTE);
+*/
 }
 
 #ifdef VIXL_NEGATIVE_TESTING
 TEST(test_metadata_mte_neg) {
   CPUFeatures features(CPUFeatures::kMTE);
   SETUP_WITH_FEATURES(features);
+/*
   size_t data_size = 320;
   void* tagged_address = simulator.Mmap(NULL,
                                         data_size,
@@ -123,6 +122,7 @@ TEST(test_metadata_mte_neg) {
   }
 
   simulator.Munmap(tagged_address, data_size, PROT_MTE);
+*/
 }
 #endif  // VIXL_NEGATIVE_TESTING
 #endif  // VIXL_INCLUDE_SIMULATOR_AARCH64

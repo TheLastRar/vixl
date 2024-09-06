@@ -4820,6 +4820,7 @@ void Simulator::CompareAndSwapPairHelper(const Instruction* instr) {
   }
 }
 
+// Protected
 bool Simulator::CanReadMemory(uintptr_t address, size_t size) {
 #ifndef _WIN32
   // To simulate fault-tolerant loads, we need to know what host addresses we
@@ -4829,12 +4830,14 @@ bool Simulator::CanReadMemory(uintptr_t address, size_t size) {
   //
   // [1]: https://stackoverflow.com/questions/7134590
 
+  VIXL_ASSERT(size <= kZRegMaxSizeInBytes);
+
   size_t written = 0;
   bool can_read = true;
   // `write` will normally return after one invocation, but it is allowed to
   // handle only part of the operation, so wrap it in a loop.
   while (can_read && (written < size)) {
-    ssize_t result = write(placeholder_pipe_fd_[1],
+    int result = _write(placeholder_pipe_fd_[1],
                            reinterpret_cast<void*>(address + written),
                            size - written);
     if (result > 0) {
@@ -4864,7 +4867,7 @@ bool Simulator::CanReadMemory(uintptr_t address, size_t size) {
   // loads, so the maximum Z register size is a good default buffer size.
   char buffer[kZRegMaxSizeInBytes];
   while (written > 0) {
-    ssize_t result = read(placeholder_pipe_fd_[0],
+    int result = _read(placeholder_pipe_fd_[0],
                           reinterpret_cast<void*>(buffer),
                           sizeof(buffer));
     // `read` blocks, and returns 0 only at EOF. We should not hit EOF until

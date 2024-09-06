@@ -29,7 +29,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <sys/mman.h>
 
 #include "test-runner.h"
 #include "test-utils.h"

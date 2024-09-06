@@ -30,8 +30,16 @@
 #include <cstdlib>
 #include <cstring>
 #include <functional>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
+#include <Memoryapi.h>
+#else
 #include <sys/mman.h>
 #include <unistd.h>
+#endif
 
 #include "test-runner.h"
 #include "test-utils.h"
@@ -8703,12 +8711,17 @@ static void BufferFillingHelper(uint64_t data_ptr,
                                 uint64_t* offsets,
                                 uint64_t* addresses = nullptr,
                                 uint64_t* max_address = nullptr) {
-  // Use a fixed seed for nrand48() so that test runs are reproducible.
-  unsigned short seed[3] = {1, 2, 3};  // NOLINT(google-runtime-int)
+  // Use a fixed seed so that test runs are reproducible.
+  uint64_t seed = (1 + (2 << 16) + (static_cast<uint64_t>(3) << 32));
+  std::linear_congruential_engine<uint64_t,
+                                  0x5DEECE66D,
+                                  0xB,
+                                  static_cast<uint64_t>(1) << 48>
+    rand_gen(seed);
 
   // Fill a buffer with arbitrary data.
   for (size_t i = 0; i < buffer_size; i++) {
-    uint8_t byte = nrand48(seed) & 0xff;
+    uint8_t byte = rand_gen() & 0xff;
     memcpy(reinterpret_cast<void*>(data_ptr + i), &byte, 1);
   }
 
@@ -8718,7 +8731,7 @@ static void BufferFillingHelper(uint64_t data_ptr,
 
   // Vectors of random addresses and offsets into the buffer.
   for (int i = 0; i < lane_count; i++) {
-    uint64_t rnd = nrand48(seed);
+    uint64_t rnd = rand_gen();
     // Limit the range to the set of completely-accessible elements in memory.
     offsets[i] = rnd % (buffer_size - lane_size_in_bytes);
     if ((addresses != nullptr) && (max_address != nullptr)) {
@@ -8814,7 +8827,15 @@ static void Ldff1Helper(Test* config,
   START();
 
   int vl = config->sve_vl_in_bytes();
+
+#ifdef _WIN32
+  SYSTEM_INFO sysInfo;
+  GetSystemInfo(&sysInfo);
+  size_t page_size = sysInfo.dwPageSize;
+#else
   size_t page_size = sysconf(_SC_PAGE_SIZE);
+#endif
+
   VIXL_ASSERT(page_size > static_cast<size_t>(vl));
 
   unsigned esize_in_bytes = esize_in_bits / kBitsPerByte;
@@ -8987,10 +9008,26 @@ static void Ldff1Helper(Test* config,
 }
 
 TEST_SVE(sve_ldff1_scalar_plus_scalar) {
+
+#ifdef _WIN32
+  SYSTEM_INFO sysInfo;
+  GetSystemInfo(&sysInfo);
+  size_t page_size = sysInfo.dwPageSize;
+#else
   size_t page_size = sysconf(_SC_PAGE_SIZE);
+#endif
+
   VIXL_ASSERT(page_size > static_cast<size_t>(config->sve_vl_in_bytes()));
 
   // Allocate two pages, then mprotect the second one to make it inaccessible.
+#ifdef _WIN32
+  uintptr_t data = reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
+                                                            page_size * 2,
+                                                            MEM_RESERVE | MEM_COMMIT,
+                                                            PAGE_READWRITE));
+  DWORD oldProtect;
+  VirtualProtect(reinterpret_cast<void*>(data + page_size), page_size, PAGE_NOACCESS, &oldProtect);
+#else
   uintptr_t data = reinterpret_cast<uintptr_t>(mmap(NULL,
                                                     page_size * 2,
                                                     PROT_READ | PROT_WRITE,
@@ -8998,6 +9035,7 @@ TEST_SVE(sve_ldff1_scalar_plus_scalar) {
                                                     -1,
                                                     0));
   mprotect(reinterpret_cast<void*>(data + page_size), page_size, PROT_NONE);
+#endif
 
   // Fill the accessible page with arbitrary data.
   for (size_t i = 0; i < page_size; i++) {
@@ -9065,7 +9103,11 @@ TEST_SVE(sve_ldff1_scalar_plus_scalar) {
   Ld1Macro ld1sw = &MacroAssembler::Ld1sw;
   ldff1_scaled_offset_helper(kSRegSize, kDRegSize, ldff1sw, ld1sw);
 
+#ifdef _WIN32
+  VirtualFree(reinterpret_cast<void*>(data), 0, MEM_RELEASE);
+#else
   munmap(reinterpret_cast<void*>(data), page_size * 2);
+#endif
 }
 
 static void sve_ldff1_scalar_plus_vector_32_scaled_offset(Test* config,
@@ -9302,10 +9344,26 @@ static void sve_ldff1_scalar_plus_vector_64_unscaled_offset(Test* config,
 }
 
 TEST_SVE(sve_ldff1_scalar_plus_vector) {
+
+#ifdef _WIN32
+  SYSTEM_INFO sysInfo;
+  GetSystemInfo(&sysInfo);
+  size_t page_size = sysInfo.dwPageSize;
+#else
   size_t page_size = sysconf(_SC_PAGE_SIZE);
+#endif
+
   VIXL_ASSERT(page_size > static_cast<size_t>(config->sve_vl_in_bytes()));
 
   // Allocate two pages, then mprotect the second one to make it inaccessible.
+#ifdef _WIN32
+  uintptr_t data = reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
+                                                            page_size * 2,
+                                                            MEM_RESERVE | MEM_COMMIT,
+                                                            PAGE_READWRITE));
+  DWORD oldProtect;
+  VirtualProtect(reinterpret_cast<void*>(data + page_size), page_size, PAGE_NOACCESS, &oldProtect);
+#else
   uintptr_t data = reinterpret_cast<uintptr_t>(mmap(NULL,
                                                     page_size * 2,
                                                     PROT_READ | PROT_WRITE,
@@ -9313,6 +9371,7 @@ TEST_SVE(sve_ldff1_scalar_plus_vector) {
                                                     -1,
                                                     0));
   mprotect(reinterpret_cast<void*>(data + page_size), page_size, PROT_NONE);
+#endif
 
   // Fill the accessible page with arbitrary data.
   for (size_t i = 0; i < page_size; i++) {
@@ -9328,7 +9387,11 @@ TEST_SVE(sve_ldff1_scalar_plus_vector) {
   sve_ldff1_scalar_plus_vector_64_scaled_offset(config, data);
   sve_ldff1_scalar_plus_vector_64_unscaled_offset(config, data);
 
+#ifdef _WIN32
+  VirtualFree(reinterpret_cast<void*>(data), 0, MEM_RELEASE);
+#else
   munmap(reinterpret_cast<void*>(data), page_size * 2);
+#endif
 }
 
 TEST_SVE(sve_ldnf1) {
@@ -9337,17 +9400,31 @@ TEST_SVE(sve_ldnf1) {
                           CPUFeatures::kFP);
   START();
 
+#ifdef _WIN32
+  SYSTEM_INFO sysInfo;
+  GetSystemInfo(&sysInfo);
+  size_t page_size = sysInfo.dwPageSize;
+#else
   size_t page_size = sysconf(_SC_PAGE_SIZE);
+#endif
+
   VIXL_ASSERT(page_size > static_cast<size_t>(config->sve_vl_in_bytes()));
 
   // Allocate two pages, fill them with data, then mprotect the second one to
   // make it inaccessible.
+#ifdef _WIN32
+  uintptr_t data = reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
+                                                            page_size * 2,
+                                                            MEM_RESERVE | MEM_COMMIT,
+                                                            PAGE_READWRITE));
+#else
   uintptr_t data = reinterpret_cast<uintptr_t>(mmap(NULL,
                                                     page_size * 2,
                                                     PROT_READ | PROT_WRITE,
                                                     MAP_PRIVATE | MAP_ANONYMOUS,
                                                     -1,
                                                     0));
+#endif
 
   // Fill the pages with arbitrary data.
   for (size_t i = 0; i < page_size; i++) {
@@ -9356,7 +9433,12 @@ TEST_SVE(sve_ldnf1) {
     memcpy(reinterpret_cast<void*>(data + i), &byte, 1);
   }
 
+#ifdef _WIN32
+  DWORD oldProtect;
+  VirtualProtect(reinterpret_cast<void*>(data + page_size), page_size, PAGE_NOACCESS, &oldProtect);
+#else
   mprotect(reinterpret_cast<void*>(data + page_size), page_size, PROT_NONE);
+#endif
 
   __ Setffr();
   __ Ptrue(p0.VnB());
@@ -9435,7 +9517,11 @@ TEST_SVE(sve_ldnf1) {
     ASSERT_EQUAL_SVE(z26, z6);
   }
 
+#ifdef _WIN32
+  VirtualFree(reinterpret_cast<void*>(data), 0, MEM_RELEASE);
+#else
   munmap(reinterpret_cast<void*>(data), page_size * 2);
+#endif
 }
 
 // Emphasis on test if the modifiers are propagated and simulated correctly.
@@ -9443,15 +9529,30 @@ TEST_SVE(sve_ldff1_regression_test) {
   SVE_SETUP_WITH_FEATURES(CPUFeatures::kSVE);
   START();
 
+#ifdef _WIN32
+  SYSTEM_INFO sysInfo;
+  GetSystemInfo(&sysInfo);
+  size_t page_size = sysInfo.dwPageSize;
+#else
   size_t page_size = sysconf(_SC_PAGE_SIZE);
+#endif
+
   VIXL_ASSERT(page_size > static_cast<size_t>(config->sve_vl_in_bytes()));
 
+#ifdef _WIN32
+  uintptr_t data = reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
+                                                            page_size * 2,
+                                                            MEM_RESERVE | MEM_COMMIT,
+                                                            PAGE_READWRITE));
+#else
   uintptr_t data = reinterpret_cast<uintptr_t>(mmap(NULL,
                                                     page_size * 2,
                                                     PROT_READ | PROT_WRITE,
                                                     MAP_PRIVATE | MAP_ANONYMOUS,
                                                     -1,
                                                     0));
+#endif
+
   uintptr_t middle = data + page_size;
   // Fill the accessible page with arbitrary data.
   for (size_t i = 0; i < page_size; i++) {
@@ -9632,6 +9733,12 @@ TEST_SVE(sve_ldff1_regression_test) {
     ASSERT_EQUAL_SVE(expected_z28, z28.VnD());
     ASSERT_EQUAL_SVE(expected_z29, z29.VnD());
   }
+
+#ifdef _WIN32
+  VirtualFree(reinterpret_cast<void*>(data), 0, MEM_RELEASE);
+#else
+  munmap(reinterpret_cast<void*>(data), page_size * 2);
+#endif
 }
 
 // Emphasis on test if the modifiers are propagated and simulated correctly.
@@ -9639,15 +9746,30 @@ TEST_SVE(sve_ld1_regression_test) {
   SVE_SETUP_WITH_FEATURES(CPUFeatures::kSVE);
   START();
 
+#ifdef _WIN32
+  SYSTEM_INFO sysInfo;
+  GetSystemInfo(&sysInfo);
+  size_t page_size = sysInfo.dwPageSize;
+#else
   size_t page_size = sysconf(_SC_PAGE_SIZE);
+#endif
+
   VIXL_ASSERT(page_size > static_cast<size_t>(config->sve_vl_in_bytes()));
 
+#ifdef _WIN32
+  uintptr_t data = reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
+                                                            page_size * 2,
+                                                            MEM_RESERVE | MEM_COMMIT,
+                                                            PAGE_READWRITE));
+#else
   uintptr_t data = reinterpret_cast<uintptr_t>(mmap(NULL,
                                                     page_size * 2,
                                                     PROT_READ | PROT_WRITE,
                                                     MAP_PRIVATE | MAP_ANONYMOUS,
                                                     -1,
                                                     0));
+#endif
+
   uintptr_t middle = data + page_size;
   // Fill the accessible page with arbitrary data.
   for (size_t i = 0; i < page_size; i++) {
@@ -9812,6 +9934,12 @@ TEST_SVE(sve_ld1_regression_test) {
     ASSERT_EQUAL_SVE(expected_z28, z28.VnD());
     ASSERT_EQUAL_SVE(expected_z29, z29.VnD());
   }
+
+#ifdef _WIN32
+  VirtualFree(reinterpret_cast<void*>(data), 0, MEM_RELEASE);
+#else
+  munmap(reinterpret_cast<void*>(data), page_size * 2);
+#endif
 }
 
 // Test gather loads by comparing them with the result of a set of equivalent

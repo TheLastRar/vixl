@@ -27,7 +27,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
-import fcntl
 import itertools
 import multiprocessing
 import os
@@ -212,8 +211,7 @@ def RunCommand(command, environment_options = None):
   indicator = ' (still working: %d seconds elapsed)'
 
   # Mark the process output as non-blocking.
-  flags = fcntl.fcntl(p.stdout, fcntl.F_GETFL)
-  fcntl.fcntl(p.stdout, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+  os.set_blocking(p.stdout.fileno(), False)
 
   t_start = time.time()
   t_current = t_start
