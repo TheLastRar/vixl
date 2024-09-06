@@ -58,7 +58,8 @@ uint64_t BenchCodeGenerator::GetRandomBits(int bits) {
 
   while (bits >= 32) {
     // For big chunks, call rng directly.
-    result = (result << 32) | static_cast<uint32_t>(rand_gen_());  // [-2^31, 2^31]
+    result =
+        (result << 32) | static_cast<uint32_t>(rand_gen_());  // [-2^31, 2^31]
     bits -= 32;
   }
   if (bits == 0) return result;

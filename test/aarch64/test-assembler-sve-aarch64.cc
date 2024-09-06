@@ -8717,7 +8717,7 @@ static void BufferFillingHelper(uint64_t data_ptr,
                                   0x5DEECE66D,
                                   0xB,
                                   static_cast<uint64_t>(1) << 48>
-    rand_gen(seed);
+      rand_gen(seed);
 
   // Fill a buffer with arbitrary data.
   for (size_t i = 0; i < buffer_size; i++) {
@@ -9008,7 +9008,6 @@ static void Ldff1Helper(Test* config,
 }
 
 TEST_SVE(sve_ldff1_scalar_plus_scalar) {
-
 #ifdef _WIN32
   SYSTEM_INFO sysInfo;
   GetSystemInfo(&sysInfo);
@@ -9021,12 +9020,16 @@ TEST_SVE(sve_ldff1_scalar_plus_scalar) {
 
   // Allocate two pages, then mprotect the second one to make it inaccessible.
 #ifdef _WIN32
-  uintptr_t data = reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
-                                                            page_size * 2,
-                                                            MEM_RESERVE | MEM_COMMIT,
-                                                            PAGE_READWRITE));
+  uintptr_t data =
+      reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
+                                               page_size * 2,
+                                               MEM_RESERVE | MEM_COMMIT,
+                                               PAGE_READWRITE));
   DWORD oldProtect;
-  VirtualProtect(reinterpret_cast<void*>(data + page_size), page_size, PAGE_NOACCESS, &oldProtect);
+  VirtualProtect(reinterpret_cast<void*>(data + page_size),
+                 page_size,
+                 PAGE_NOACCESS,
+                 &oldProtect);
 #else
   uintptr_t data = reinterpret_cast<uintptr_t>(mmap(NULL,
                                                     page_size * 2,
@@ -9344,7 +9347,6 @@ static void sve_ldff1_scalar_plus_vector_64_unscaled_offset(Test* config,
 }
 
 TEST_SVE(sve_ldff1_scalar_plus_vector) {
-
 #ifdef _WIN32
   SYSTEM_INFO sysInfo;
   GetSystemInfo(&sysInfo);
@@ -9357,12 +9359,16 @@ TEST_SVE(sve_ldff1_scalar_plus_vector) {
 
   // Allocate two pages, then mprotect the second one to make it inaccessible.
 #ifdef _WIN32
-  uintptr_t data = reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
-                                                            page_size * 2,
-                                                            MEM_RESERVE | MEM_COMMIT,
-                                                            PAGE_READWRITE));
+  uintptr_t data =
+      reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
+                                               page_size * 2,
+                                               MEM_RESERVE | MEM_COMMIT,
+                                               PAGE_READWRITE));
   DWORD oldProtect;
-  VirtualProtect(reinterpret_cast<void*>(data + page_size), page_size, PAGE_NOACCESS, &oldProtect);
+  VirtualProtect(reinterpret_cast<void*>(data + page_size),
+                 page_size,
+                 PAGE_NOACCESS,
+                 &oldProtect);
 #else
   uintptr_t data = reinterpret_cast<uintptr_t>(mmap(NULL,
                                                     page_size * 2,
@@ -9413,10 +9419,11 @@ TEST_SVE(sve_ldnf1) {
   // Allocate two pages, fill them with data, then mprotect the second one to
   // make it inaccessible.
 #ifdef _WIN32
-  uintptr_t data = reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
-                                                            page_size * 2,
-                                                            MEM_RESERVE | MEM_COMMIT,
-                                                            PAGE_READWRITE));
+  uintptr_t data =
+      reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
+                                               page_size * 2,
+                                               MEM_RESERVE | MEM_COMMIT,
+                                               PAGE_READWRITE));
 #else
   uintptr_t data = reinterpret_cast<uintptr_t>(mmap(NULL,
                                                     page_size * 2,
@@ -9435,7 +9442,10 @@ TEST_SVE(sve_ldnf1) {
 
 #ifdef _WIN32
   DWORD oldProtect;
-  VirtualProtect(reinterpret_cast<void*>(data + page_size), page_size, PAGE_NOACCESS, &oldProtect);
+  VirtualProtect(reinterpret_cast<void*>(data + page_size),
+                 page_size,
+                 PAGE_NOACCESS,
+                 &oldProtect);
 #else
   mprotect(reinterpret_cast<void*>(data + page_size), page_size, PROT_NONE);
 #endif
@@ -9540,10 +9550,11 @@ TEST_SVE(sve_ldff1_regression_test) {
   VIXL_ASSERT(page_size > static_cast<size_t>(config->sve_vl_in_bytes()));
 
 #ifdef _WIN32
-  uintptr_t data = reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
-                                                            page_size * 2,
-                                                            MEM_RESERVE | MEM_COMMIT,
-                                                            PAGE_READWRITE));
+  uintptr_t data =
+      reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
+                                               page_size * 2,
+                                               MEM_RESERVE | MEM_COMMIT,
+                                               PAGE_READWRITE));
 #else
   uintptr_t data = reinterpret_cast<uintptr_t>(mmap(NULL,
                                                     page_size * 2,
@@ -9757,10 +9768,11 @@ TEST_SVE(sve_ld1_regression_test) {
   VIXL_ASSERT(page_size > static_cast<size_t>(config->sve_vl_in_bytes()));
 
 #ifdef _WIN32
-  uintptr_t data = reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
-                                                            page_size * 2,
-                                                            MEM_RESERVE | MEM_COMMIT,
-                                                            PAGE_READWRITE));
+  uintptr_t data =
+      reinterpret_cast<uintptr_t>(VirtualAlloc(NULL,
+                                               page_size * 2,
+                                               MEM_RESERVE | MEM_COMMIT,
+                                               PAGE_READWRITE));
 #else
   uintptr_t data = reinterpret_cast<uintptr_t>(mmap(NULL,
                                                     page_size * 2,

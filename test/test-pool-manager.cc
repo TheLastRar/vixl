@@ -42,13 +42,12 @@
 
 using namespace vixl;
 
-static int Random()
-{
+static int Random() {
   static std::linear_congruential_engine<uint64_t,
                                          0x5DEECE66D,
                                          0xB,
                                          static_cast<uint64_t>(1) << 48>
-  rand_gen_(0x330E + (42 << 16));
+      rand_gen_(0x330E + (42 << 16));
   return std::abs(static_cast<int>(rand_gen_()));
 }
 

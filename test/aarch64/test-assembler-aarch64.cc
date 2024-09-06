@@ -2981,9 +2981,9 @@ template <typename Op>
 static void MTEStoreTagHelper(Op op,
                               AddrMode addr_mode,
                               int attr = StgNoSideEffect) {
+#if 0
   SETUP_WITH_FEATURES(CPUFeatures::kMTE);
   START();
-/*
   // This method does nothing when the size is zero. i.e. stg and st2g.
   // Reserve x9 and x10.
   auto LoadDataAndSum = [&](Register reg, int off, unsigned size_in_bytes) {
@@ -3162,7 +3162,11 @@ static void MTEStoreTagHelper(Op op,
 #ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
   simulator.Munmap(data_ptr, data_size, PROT_MTE);
 #endif
-*/
+#else
+  USE(op);
+  USE(addr_mode);
+  USE(attr);
+#endif
 }
 
 TEST(st2g_ldg) {
@@ -3190,9 +3194,9 @@ TEST(stzg_ldg) {
 }
 
 TEST(stgp_ldg) {
+#if 0
   SETUP_WITH_FEATURES(CPUFeatures::kMTE);
   START();
-/*
   // Initialize registers to zero.
   for (int i = 0; i < 29; i++) {
     __ Mov(XRegister(i), 0);
@@ -3335,7 +3339,7 @@ TEST(stgp_ldg) {
 #ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
   simulator.Munmap(data_ptr, data_size, PROT_MTE);
 #endif
-*/
+#endif
 }
 
 TEST(ldr_str_offset) {
@@ -11257,7 +11261,8 @@ TEST(ldaprb_ldaprh_ldapr) {
 
 
 TEST(ldapurb_ldapurh_ldapur) {
-  alignas(kXRegSizeInBytes * 2) uint64_t data[] = {0x0123456789abcdef, 0xfedcba9876543210};
+  alignas(kXRegSizeInBytes * 2)
+      uint64_t data[] = {0x0123456789abcdef, 0xfedcba9876543210};
 
   uintptr_t data_base = reinterpret_cast<uintptr_t>(data);
 
@@ -11301,7 +11306,8 @@ TEST(ldapurb_ldapurh_ldapur) {
 
 
 TEST(ldapursb_ldapursh_ldapursw) {
-  alignas(kXRegSizeInBytes * 2) uint64_t data[] = {0x0123456789abcdef, 0xfedcba9876543210};
+  alignas(kXRegSizeInBytes * 2)
+      uint64_t data[] = {0x0123456789abcdef, 0xfedcba9876543210};
 
   uintptr_t data_base = reinterpret_cast<uintptr_t>(data);
 
@@ -14408,8 +14414,8 @@ TEST(mops_setn) {
 }
 
 TEST(mops_setg) {
+#if 0
   SETUP_WITH_FEATURES(CPUFeatures::kMOPS, CPUFeatures::kMTE);
-/*
   uint8_t* dst_addr = nullptr;
 #ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
   const int dst_size = 32;
@@ -14458,7 +14464,7 @@ TEST(mops_setg) {
 #ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
   simulator.Munmap(dst_addr, dst_size, PROT_MTE);
 #endif
-*/
+#endif
 }
 
 TEST(mops_cpy) {
