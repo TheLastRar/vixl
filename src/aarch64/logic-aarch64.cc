@@ -36,33 +36,33 @@ namespace aarch64 {
 using vixl::internal::SimFloat16;
 
 template <typename T>
-bool IsFloat64() {
+constexpr bool IsFloat64() {
   return false;
 }
 template <>
-bool IsFloat64<double>() {
+constexpr bool IsFloat64<double>() {
   return true;
 }
 
 template <typename T>
-bool IsFloat32() {
+constexpr bool IsFloat32() {
   return false;
 }
 template <>
-bool IsFloat32<float>() {
+constexpr bool IsFloat32<float>() {
   return true;
 }
 
 template <typename T>
-bool IsFloat16() {
+constexpr bool IsFloat16() {
   return false;
 }
 template <>
-bool IsFloat16<Float16>() {
+constexpr bool IsFloat16<Float16>() {
   return true;
 }
 template <>
-bool IsFloat16<SimFloat16>() {
+constexpr bool IsFloat16<SimFloat16>() {
   return true;
 }
 
@@ -173,7 +173,7 @@ uint64_t Simulator::GenerateRandomTag(uint16_t exclude) {
   VIXL_ASSERT(IsUint4(rtag));
 
   if (exclude == 0) {
-    exclude = rand_gen_() >> 44;
+    exclude = static_cast<uint16_t>(rand_gen_() >> 44);
   }
 
   // TODO: implement this to better match the specification, which calls for a
@@ -4563,7 +4563,7 @@ T Simulator::FPMulx(T op1, T op2) {
   if ((IsInf(op1) && (op2 == 0.0)) || (IsInf(op2) && (op1 == 0.0))) {
     // inf * 0.0 returns +/-2.0.
     T two = 2.0;
-    return copysign(1.0, op1) * copysign(1.0, op2) * two;
+    return static_cast<T>(copysign(1.0, op1) * copysign(1.0, op2) * two);
   }
   return FPMul(op1, op2);
 }
@@ -4715,8 +4715,8 @@ T Simulator::FPRecipStepFused(T op1, T op2) {
     return two;
   } else if (IsInf(op1) || IsInf(op2)) {
     // Return +inf if signs match, otherwise -inf.
-    return ((op1 >= 0.0) == (op2 >= 0.0)) ? kFP64PositiveInfinity
-                                          : kFP64NegativeInfinity;
+    return ((op1 >= 0.0) == (op2 >= 0.0)) ? T(kFP64PositiveInfinity)
+                                          : T(kFP64NegativeInfinity);
   } else {
     return FusedMultiplyAdd(op1, op2, two);
   }
@@ -4745,8 +4745,8 @@ T Simulator::FPRSqrtStepFused(T op1, T op2) {
     return one_point_five;
   } else if (IsInf(op1) || IsInf(op2)) {
     // Return +inf if signs match, otherwise -inf.
-    return ((op1 >= 0.0) == (op2 >= 0.0)) ? kFP64PositiveInfinity
-                                          : kFP64NegativeInfinity;
+    return ((op1 >= 0.0) == (op2 >= 0.0)) ? T(kFP64PositiveInfinity)
+                                          : T(kFP64NegativeInfinity);
   } else {
     // The multiply-add-halve operation must be fully fused, so avoid interim
     // rounding by checking which operand can be losslessly divided by two
@@ -5579,8 +5579,8 @@ LogicVRegister Simulator::fsqrt(VectorFormat vform,
                                 LogicVRegister dst,                            \
                                 const LogicVRegister& src) {                   \
     if (vform == kFormatH) {                                                   \
-      SimFloat16 result(OP(SimFloat16(RawbitsToFloat16(src.Uint(vform, 0))),   \
-                           SimFloat16(RawbitsToFloat16(src.Uint(vform, 1))))); \
+      SimFloat16 result(OP(SimFloat16(RawbitsToFloat16(static_cast<uint16_t>(src.Uint(vform, 0)))),   \
+                           SimFloat16(RawbitsToFloat16(static_cast<uint16_t>(src.Uint(vform, 1)))))); \
       dst.SetUint(vform, 0, Float16ToRawbits(result));                         \
     } else if (vform == kFormatS) {                                            \
       float result = OP(src.Float<float>(0), src.Float<float>(1));             \
@@ -6144,9 +6144,9 @@ T Simulator::FPRecipSqrtEstimate(T op) {
     return FPProcessNaN(op);
   } else if (op == 0.0) {
     if (copysign(1.0, op) < 0.0) {
-      return kFP64NegativeInfinity;
+      return T(kFP64NegativeInfinity);
     } else {
-      return kFP64PositiveInfinity;
+      return T(kFP64PositiveInfinity);
     }
   } else if (copysign(1.0, op) < 0.0) {
     FPProcessException();
@@ -6157,11 +6157,11 @@ T Simulator::FPRecipSqrtEstimate(T op) {
     uint64_t fraction;
     int exp, result_exp;
 
-    if (IsFloat16<T>()) {
+    if constexpr(IsFloat16<T>()) {
       exp = Float16Exp(op);
       fraction = Float16Mantissa(op);
       fraction <<= 42;
-    } else if (IsFloat32<T>()) {
+    } else if constexpr(IsFloat32<T>()) {
       exp = FloatExp(op);
       fraction = FloatMantissa(op);
       fraction <<= 29;
@@ -6186,9 +6186,9 @@ T Simulator::FPRecipSqrtEstimate(T op) {
       scaled = DoublePack(0, 1021, Bits(fraction, 51, 44) << 44);
     }
 
-    if (IsFloat16<T>()) {
+    if constexpr(IsFloat16<T>()) {
       result_exp = (44 - exp) / 2;
-    } else if (IsFloat32<T>()) {
+    } else if constexpr(IsFloat32<T>()) {
       result_exp = (380 - exp) / 2;
     } else {
       VIXL_ASSERT(IsFloat64<T>());
@@ -6197,11 +6197,11 @@ T Simulator::FPRecipSqrtEstimate(T op) {
 
     uint64_t estimate = DoubleToRawbits(recip_sqrt_estimate(scaled));
 
-    if (IsFloat16<T>()) {
+    if constexpr(IsFloat16<T>()) {
       uint16_t exp_bits = static_cast<uint16_t>(Bits(result_exp, 4, 0));
       uint16_t est_bits = static_cast<uint16_t>(Bits(estimate, 51, 42));
       return Float16Pack(0, exp_bits, est_bits);
-    } else if (IsFloat32<T>()) {
+    } else if constexpr(IsFloat32<T>()) {
       uint32_t exp_bits = static_cast<uint32_t>(Bits(result_exp, 7, 0));
       uint32_t est_bits = static_cast<uint32_t>(Bits(estimate, 51, 29));
       return FloatPack(0, exp_bits, est_bits);
@@ -6241,9 +6241,9 @@ template <typename T>
 T Simulator::FPRecipEstimate(T op, FPRounding rounding) {
   uint32_t sign;
 
-  if (IsFloat16<T>()) {
+  if constexpr(IsFloat16<T>()) {
     sign = Float16Sign(op);
-  } else if (IsFloat32<T>()) {
+  } else if constexpr(IsFloat32<T>()) {
     sign = FloatSign(op);
   } else {
     VIXL_ASSERT(IsFloat64<T>());
@@ -6253,10 +6253,10 @@ T Simulator::FPRecipEstimate(T op, FPRounding rounding) {
   if (IsNaN(op)) {
     return FPProcessNaN(op);
   } else if (IsInf(op)) {
-    return (sign == 1) ? -0.0 : 0.0;
+    return (sign == 1) ? T(-0.0) : T(0.0);
   } else if (op == 0.0) {
     FPProcessException();  // FPExc_DivideByZero exception.
-    return (sign == 1) ? kFP64NegativeInfinity : kFP64PositiveInfinity;
+    return (sign == 1) ? T(kFP64NegativeInfinity) : T(kFP64PositiveInfinity);
   } else if ((IsFloat16<T>() && (std::fabs(op) < std::pow(2.0, -16.0))) ||
              (IsFloat32<T>() && (std::fabs(op) < std::pow(2.0, -128.0))) ||
              (IsFloat64<T>() && (std::fabs(op) < std::pow(2.0, -1024.0)))) {
@@ -6279,12 +6279,12 @@ T Simulator::FPRecipEstimate(T op, FPRounding rounding) {
     }
     FPProcessException();  // FPExc_Overflow and FPExc_Inexact.
     if (overflow_to_inf) {
-      return (sign == 1) ? kFP64NegativeInfinity : kFP64PositiveInfinity;
+      return (sign == 1) ? T(kFP64NegativeInfinity) : T(kFP64PositiveInfinity);
     } else {
       // Return FPMaxNormal(sign).
-      if (IsFloat16<T>()) {
+      if constexpr(IsFloat16<T>()) {
         return Float16Pack(sign, 0x1f, 0x3ff);
-      } else if (IsFloat32<T>()) {
+      } else if constexpr(IsFloat32<T>()) {
         return FloatPack(sign, 0xfe, 0x07fffff);
       } else {
         VIXL_ASSERT(IsFloat64<T>());
@@ -6295,12 +6295,12 @@ T Simulator::FPRecipEstimate(T op, FPRounding rounding) {
     uint64_t fraction;
     int exp, result_exp;
 
-    if (IsFloat16<T>()) {
+    if constexpr(IsFloat16<T>()) {
       sign = Float16Sign(op);
       exp = Float16Exp(op);
       fraction = Float16Mantissa(op);
       fraction <<= 42;
-    } else if (IsFloat32<T>()) {
+    } else if constexpr(IsFloat32<T>()) {
       sign = FloatSign(op);
       exp = FloatExp(op);
       fraction = FloatMantissa(op);
@@ -6323,9 +6323,9 @@ T Simulator::FPRecipEstimate(T op, FPRounding rounding) {
 
     double scaled = DoublePack(0, 1022, Bits(fraction, 51, 44) << 44);
 
-    if (IsFloat16<T>()) {
+    if constexpr(IsFloat16<T>()) {
       result_exp = (29 - exp);  // In range 29-30 = -1 to 29+1 = 30.
-    } else if (IsFloat32<T>()) {
+    } else if constexpr(IsFloat32<T>()) {
       result_exp = (253 - exp);  // In range 253-254 = -1 to 253+1 = 254.
     } else {
       VIXL_ASSERT(IsFloat64<T>());
@@ -6341,11 +6341,11 @@ T Simulator::FPRecipEstimate(T op, FPRounding rounding) {
       fraction = (UINT64_C(1) << 50) | Bits(fraction, 51, 2);
       result_exp = 0;
     }
-    if (IsFloat16<T>()) {
+    if constexpr(IsFloat16<T>()) {
       uint16_t exp_bits = static_cast<uint16_t>(Bits(result_exp, 4, 0));
       uint16_t frac_bits = static_cast<uint16_t>(Bits(fraction, 51, 42));
       return Float16Pack(sign, exp_bits, frac_bits);
-    } else if (IsFloat32<T>()) {
+    } else if constexpr(IsFloat32<T>()) {
       uint32_t exp_bits = static_cast<uint32_t>(Bits(result_exp, 7, 0));
       uint32_t frac_bits = static_cast<uint32_t>(Bits(fraction, 51, 29));
       return FloatPack(sign, exp_bits, frac_bits);
@@ -6491,12 +6491,12 @@ LogicVRegister Simulator::frecpx(VectorFormat vform,
     } else {
       int exp;
       uint32_t sign;
-      if (IsFloat16<T>()) {
+      if constexpr(IsFloat16<T>()) {
         sign = Float16Sign(op);
         exp = Float16Exp(op);
         exp = (exp == 0) ? (0x1F - 1) : static_cast<int>(Bits(~exp, 4, 0));
         result = Float16Pack(sign, exp, 0);
-      } else if (IsFloat32<T>()) {
+      } else if constexpr(IsFloat32<T>()) {
         sign = FloatSign(op);
         exp = FloatExp(op);
         exp = (exp == 0) ? (0xFF - 1) : static_cast<int>(Bits(~exp, 7, 0));
@@ -6800,18 +6800,18 @@ LogicVRegister Simulator::fexpa(VectorFormat vform,
 
   if (lane_size == kHRegSize) {
     index_highbit = 4;
-    VIXL_ASSERT(ArrayLength(fexpa_coeff16) == (1U << (index_highbit + 1)));
+    VIXL_ASSERT(ArrayLength(fexpa_coeff16) == (UINT64_C(1) << (index_highbit + 1)));
     fexpa_coeff = fexpa_coeff16;
     op_highbit = 9;
     op_shift = 10;
   } else if (lane_size == kSRegSize) {
-    VIXL_ASSERT(ArrayLength(fexpa_coeff32) == (1U << (index_highbit + 1)));
+    VIXL_ASSERT(ArrayLength(fexpa_coeff32) == (UINT64_C(1) << (index_highbit + 1)));
     fexpa_coeff = fexpa_coeff32;
     op_highbit = 13;
     op_shift = 23;
   } else {
     VIXL_ASSERT(lane_size == kDRegSize);
-    VIXL_ASSERT(ArrayLength(fexpa_coeff64) == (1U << (index_highbit + 1)));
+    VIXL_ASSERT(ArrayLength(fexpa_coeff64) == (UINT64_C(1) << (index_highbit + 1)));
     fexpa_coeff = fexpa_coeff64;
     op_highbit = 16;
     op_shift = 52;

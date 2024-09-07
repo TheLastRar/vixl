@@ -164,8 +164,10 @@ TEST(sve_address_generation) {
 }
 
 TEST(sve_calculate_sve_address) {
+#ifndef _WIN32
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
+#endif
 
   // Shadow the `MacroAssembler` type so that the test macros work without
   // modification.
@@ -212,7 +214,9 @@ TEST(sve_calculate_sve_address) {
 
   CLEANUP();
 
+#ifndef _WIN32
 #pragma GCC diagnostic pop
+#endif
 }
 
 TEST(sve_bitwise_imm) {
@@ -1127,8 +1131,10 @@ TEST(sve_fp_arithmetic_predicated) {
 }
 
 TEST(sve_fp_arithmetic_predicated_macro_fast_nan_propagation) {
+#ifndef _WIN32
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
+#endif
 
   // Shadow the `MacroAssembler` type so that the test macros work without
   // modification.
@@ -1180,12 +1186,16 @@ TEST(sve_fp_arithmetic_predicated_macro_fast_nan_propagation) {
 
   CLEANUP();
 
+#ifndef _WIN32
 #pragma GCC diagnostic pop
+#endif
 }
 
 TEST(sve_fp_arithmetic_predicated_macro_strict_nan_propagation) {
+#ifndef _WIN32
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
+#endif
 
   // Shadow the `MacroAssembler` type so that the test macros work without
   // modification.
@@ -1241,7 +1251,9 @@ TEST(sve_fp_arithmetic_predicated_macro_strict_nan_propagation) {
 
   CLEANUP();
 
+#ifndef _WIN32
 #pragma GCC diagnostic pop
+#endif
 }
 
 TEST(sve_fp_arithmetic_unpredicated) {
@@ -1614,8 +1626,10 @@ TEST(sve_fp_mul_add) {
 }
 
 TEST(sve_fp_mul_add_macro_strict_nan_propagation) {
+#ifndef _WIN32
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
+#endif
 
   // Shadow the `MacroAssembler` type so that the test macros work without
   // modification.
@@ -1673,12 +1687,16 @@ TEST(sve_fp_mul_add_macro_strict_nan_propagation) {
 
   CLEANUP();
 
+#ifndef _WIN32
 #pragma GCC diagnostic pop
+#endif
 }
 
 TEST(sve_fp_mul_add_macro_fast_nan_propagation) {
+#ifndef _WIN32
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
+#endif
 
   // Shadow the `MacroAssembler` type so that the test macros work without
   // modification.
@@ -1728,7 +1746,9 @@ TEST(sve_fp_mul_add_macro_fast_nan_propagation) {
 
   CLEANUP();
 
+#ifndef _WIN32
 #pragma GCC diagnostic pop
+#endif
 }
 
 TEST(sve_fp_mul_add_index) {

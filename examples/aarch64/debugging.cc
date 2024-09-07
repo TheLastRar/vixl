@@ -76,7 +76,7 @@ int main(void) {
   simulator.WriteWRegister(0, input_a);
   simulator.WriteWRegister(1, input_b);
   simulator.RunFrom(start);
-  printf("The final result is %ld\n", simulator.ReadXRegister(3));
+  printf("The final result is %" PRId64 "\n", simulator.ReadXRegister(3));
 
   return 0;
 }

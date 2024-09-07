@@ -32,8 +32,17 @@
 #include <cstring>
 #include <errno.h>
 #include <limits>
-#include <io.h>
-#include <fcntl.h>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
+#undef MultiplyHigh
+#include <Memoryapi.h>
+#else
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
 
 namespace vixl {
 namespace aarch64 {
@@ -556,7 +565,9 @@ Simulator::Simulator(Decoder* decoder, FILE* stream, SimStack::Allocated stack)
   VIXL_ASSERT((static_cast<uint32_t>(-1) >> 1) == 0x7fffffff);
 
   // Set up a placeholder pipe for CanReadMemory.
-  VIXL_CHECK(_pipe(placeholder_pipe_fd_, kZRegMaxSizeInBytes, _O_BINARY) == 0);
+#ifndef _WIN32
+  VIXL_CHECK(pipe(placeholder_pipe_fd_) == 0);
+#endif
 
   // Set up the decoder.
   decoder_ = decoder;
@@ -706,8 +717,10 @@ Simulator::~Simulator() {
   // The decoder may outlive the simulator.
   decoder_->RemoveVisitor(print_disasm_);
   delete print_disasm_;
+#ifndef _WIN32
   close(placeholder_pipe_fd_[0]);
   close(placeholder_pipe_fd_[1]);
+#endif
   if (IsAllocatedGCS(gcs_)) {
     GetGCSManager().FreeStack(gcs_);
   }
@@ -4801,8 +4814,8 @@ void Simulator::CompareAndSwapPairHelper(const Instruction* instr) {
   }
 }
 
-// Protected
 bool Simulator::CanReadMemory(uintptr_t address, size_t size) {
+#ifndef _WIN32
   // To simulate fault-tolerant loads, we need to know what host addresses we
   // can access without generating a real fault. One way to do that is to
   // attempt to `write()` the memory to a placeholder pipe[1]. This is more
@@ -4810,14 +4823,12 @@ bool Simulator::CanReadMemory(uintptr_t address, size_t size) {
   //
   // [1]: https://stackoverflow.com/questions/7134590
 
-  VIXL_ASSERT(size <= kZRegMaxSizeInBytes);
-
   size_t written = 0;
   bool can_read = true;
   // `write` will normally return after one invocation, but it is allowed to
   // handle only part of the operation, so wrap it in a loop.
   while (can_read && (written < size)) {
-    int result = _write(placeholder_pipe_fd_[1],
+    ssize_t result = write(placeholder_pipe_fd_[1],
                            reinterpret_cast<void*>(address + written),
                            size - written);
     if (result > 0) {
@@ -4847,7 +4858,7 @@ bool Simulator::CanReadMemory(uintptr_t address, size_t size) {
   // loads, so the maximum Z register size is a good default buffer size.
   char buffer[kZRegMaxSizeInBytes];
   while (written > 0) {
-    int result = _read(placeholder_pipe_fd_[0],
+    ssize_t result = read(placeholder_pipe_fd_[0],
                           reinterpret_cast<void*>(buffer),
                           sizeof(buffer));
     // `read` blocks, and returns 0 only at EOF. We should not hit EOF until
@@ -4862,6 +4873,42 @@ bool Simulator::CanReadMemory(uintptr_t address, size_t size) {
   }
 
   return can_read;
+#else
+  // To simulate fault-tolerant loads, we need to know what host addresses we
+  // can access without generating a real fault. 
+  // The pipe code above is almost but not fully compatible with Windows
+  // Instead, use the platform specific API VirtualQuery()
+  //
+  // [2]: https://stackoverflow.com/a/18395247/9109981
+
+  bool can_read = true;
+  MEMORY_BASIC_INFORMATION pageInfo;
+
+  size_t checked = 0;
+  while (can_read && (checked < size)) {
+    size_t result = VirtualQuery(reinterpret_cast<void*>(address + checked), &pageInfo, sizeof(pageInfo));
+
+    if (result < 0)
+    {
+      can_read = false;
+      break;
+    }
+
+    if (pageInfo.State != MEM_COMMIT)
+    {
+      can_read = false;
+      break;
+    }
+
+    if (pageInfo.Protect == PAGE_NOACCESS || pageInfo.Protect == PAGE_EXECUTE)
+    {
+      can_read = false;
+    }
+    checked += pageInfo.RegionSize - ((address + checked) - reinterpret_cast<uintptr_t>(pageInfo.BaseAddress));
+  }
+
+  return can_read;
+#endif
 }
 
 void Simulator::PrintExclusiveAccessWarning() {

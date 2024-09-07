@@ -3614,11 +3614,11 @@ TEST(load_pauth) {
   __ Ldraa(x0, MemOperand(x16));
   __ Ldraa(x1, MemOperand(x16, sizeof(src[0])));
   __ Ldraa(x2, MemOperand(x16, 2 * sizeof(src[0]), PreIndex));
-  __ Ldraa(x3, MemOperand(x18, -sizeof(src[0])));
+  __ Ldraa(x3, MemOperand(x18, -static_cast<int64_t>(sizeof(src[0]))));
   __ Ldrab(x4, MemOperand(x17));
   __ Ldrab(x5, MemOperand(x17, sizeof(src[0])));
   __ Ldrab(x6, MemOperand(x17, 2 * sizeof(src[0]), PreIndex));
-  __ Ldrab(x7, MemOperand(x19, -sizeof(src[0])));
+  __ Ldrab(x7, MemOperand(x19, -static_cast<int64_t>(sizeof(src[0]))));
   END();
 
   if (CAN_RUN()) {

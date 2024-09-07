@@ -72,10 +72,13 @@ void GenerateDebuggerAsm(MacroAssembler* masm) {
 }
 
 #ifdef _WIN32
-#define CREATE_OSTREAM()           \
-  char ostream_filename[L_tmpnam]; \
-  std::tmpnam(ostream_filename);   \
-  FILE* output_stream = fopen(ostream_filename, "w")
+#define CREATE_OSTREAM()                                             \
+  char ostream_filename[L_tmpnam_s];                                 \
+  errno_t tmperr;                                                    \
+  tmperr = tmpnam_s(ostream_filename, L_tmpnam_s );                  \
+  VIXL_ASSERT(tmperr == 0);                                          \
+  /* breakpoints_hit test reads the open file via different stream*/ \
+  FILE* output_stream = _fsopen(ostream_filename, "w", _SH_DENYWR)
 #else
 #define CREATE_OSTREAM()                                      \
   char ostream_filename[] = "/tmp/vixl-test-debugger-XXXXXX"; \

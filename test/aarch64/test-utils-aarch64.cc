@@ -798,7 +798,7 @@ void SetFpData(MacroAssembler* masm,
       a = Float16ToRawbits(Float16(1.5));
       // Pick a convenient number within largest normal half-precision floating
       // point.
-      b = Float16ToRawbits(Float16(lcg_mult % 1024));
+      b = Float16ToRawbits(Float16(static_cast<double>(lcg_mult % 1024)));
       // Step 1: Set fp16 numbers to the undefined registers.
       //      p4< 15:0>: 0b0101010101010101
       // z{code}<127:0>: 0xHHHHHHHHHHHHHHHH
@@ -806,7 +806,7 @@ void SetFpData(MacroAssembler* masm,
       break;
     case kSRegSize:
       a = FloatToRawbits(1.5);
-      b = FloatToRawbits(lcg_mult);
+      b = FloatToRawbits(static_cast<float>(lcg_mult));
       // Step 2: Set fp32 numbers to register on top of fp16 initialized.
       //      p4< 15:0>: 0b0000000100000001
       // z{code}<127:0>: 0xHHHHSSSSHHHHSSSS
@@ -814,7 +814,7 @@ void SetFpData(MacroAssembler* masm,
       break;
     case kDRegSize:
       a = DoubleToRawbits(1.5);
-      b = DoubleToRawbits(lcg_mult);
+      b = DoubleToRawbits(static_cast<double>(lcg_mult));
       // Step 3: Set fp64 numbers to register on top of both fp16 and fp 32
       // initialized.
       //      p4< 15:0>: 0b0000000000000001

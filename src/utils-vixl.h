@@ -559,7 +559,7 @@ inline T SignExtend(T val, int size_in_bits) {
 template <typename T>
 T ReverseBytes(T value, int block_bytes_log2) {
   VIXL_ASSERT((sizeof(value) == 4) || (sizeof(value) == 8));
-  VIXL_ASSERT((1U << block_bytes_log2) <= sizeof(value));
+  VIXL_ASSERT((UINT64_C(1) << block_bytes_log2) <= sizeof(value));
   // Split the 64-bit value into an 8-bit array, where b[0] is the least
   // significant byte, and b[7] is the most significant.
   uint8_t bytes[8];
