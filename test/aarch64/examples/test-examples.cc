@@ -506,14 +506,14 @@ TEST(swap_int32) {
 }
 
 
-#define CHECKBOUNDS_DOTEST(Value, Low, High)                         \
-  do {                                                               \
-    simulator.ResetState();                                          \
-    simulator.WriteXRegister(0, Value);                              \
-    simulator.WriteXRegister(1, Low);                                \
-    simulator.WriteXRegister(2, High);                               \
-    TEST_FUNCTION(check_bounds);                                     \
-    VIXL_CHECK(regs.xreg(0) == ((Low <= Value) && (Value <= High))); \
+#define CHECKBOUNDS_DOTEST(Value, Low, High)                                \
+  do {                                                                      \
+    simulator.ResetState();                                                 \
+    simulator.WriteXRegister(0, Value);                                     \
+    simulator.WriteXRegister(1, Low);                                       \
+    simulator.WriteXRegister(2, High);                                      \
+    TEST_FUNCTION(check_bounds);                                            \
+    VIXL_CHECK((regs.xreg(0) != 0) == ((Low <= Value) && (Value <= High))); \
   } while (0)
 
 TEST(check_bounds) {

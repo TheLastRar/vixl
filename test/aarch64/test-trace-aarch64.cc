@@ -2977,7 +2977,9 @@ static void MaskAddresses(const char* trace) {
 }
 
 static void PrintFile(const char* name) {
-  FILE* file = fopen(name, "r");
+  FILE* file;
+  errno_t err = fopen_s(&file, name, "r");
+  VIXL_ASSERT(err == 0);
   char buffer[1024];  // The buffer size is arbitrary.
   while (fgets(buffer, sizeof(buffer), file) != NULL) fputs(buffer, stdout);
   fclose(file);
@@ -2987,8 +2989,9 @@ static bool CheckOrGenerateTrace(const char* filename, const char* ref_file) {
   bool trace_matched_reference;
   if (Test::generate_test_trace()) {
     // Copy trace_stream to stdout.
-    FILE* trace_stream = fopen(filename, "r");
-    VIXL_ASSERT(trace_stream != NULL);
+    FILE* trace_stream;
+    errno_t err = fopen_s(&trace_stream, filename, "r");
+    VIXL_ASSERT(err == 0);
     fseek(trace_stream, 0, SEEK_SET);
     int c;
     while (1) {
@@ -3019,9 +3022,13 @@ static void TraceTestHelper(bool coloured_trace,
   MacroAssembler masm(12 * KBytes);
 
 #ifdef _WIN32
-  char trace_stream_filename[L_tmpnam];
-  std::tmpnam(trace_stream_filename);
-  FILE* trace_stream = fopen(trace_stream_filename, "w");
+  char trace_stream_filename[L_tmpnam_s];
+  errno_t tmperr;
+  tmperr = tmpnam_s(trace_stream_filename, L_tmpnam_s );
+  VIXL_ASSERT(tmperr == 0);
+  FILE* trace_stream;
+  tmperr = fopen_s(&trace_stream, trace_stream_filename, "w");
+  VIXL_ASSERT(tmperr == 0);
 #else
   char trace_stream_filename[] = "/tmp/vixl-test-trace-XXXXXX";
   FILE* trace_stream = fdopen(mkstemp(trace_stream_filename), "w");
@@ -3182,9 +3189,13 @@ static void PrintDisassemblerTestHelper(const char* prefix,
   MacroAssembler masm(12 * KBytes);
 
 #ifdef _WIN32
-  char trace_stream_filename[L_tmpnam];
-  std::tmpnam(trace_stream_filename);
-  FILE* trace_stream = fopen(trace_stream_filename, "w");
+  char trace_stream_filename[L_tmpnam_s];
+  errno_t tmperr;
+  tmperr = tmpnam_s(trace_stream_filename, L_tmpnam_s );
+  VIXL_ASSERT(tmperr == 0);
+  FILE* trace_stream;
+  tmperr = fopen_s(&trace_stream, trace_stream_filename, "w");
+  VIXL_ASSERT(tmperr == 0);
 #else
   char trace_stream_filename[] = "/tmp/vixl-test-trace-XXXXXX";
   FILE* trace_stream = fdopen(mkstemp(trace_stream_filename), "w");

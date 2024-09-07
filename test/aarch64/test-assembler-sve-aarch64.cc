@@ -302,7 +302,7 @@ TEST_SVE(sve_v_write_clear) {
   // Prepare some known inputs.
   uint8_t data[kQRegSizeInBytes];
   for (size_t i = 0; i < kQRegSizeInBytes; i++) {
-    data[i] = 42 + i;
+    data[i] = static_cast<uint8_t>(42 + i);
   }
   __ Mov(x10, reinterpret_cast<uintptr_t>(data));
   __ Fmov(d30, 42.0);
@@ -5481,8 +5481,10 @@ TEST_SVE(sve_addpl) {
 }
 
 TEST_SVE(sve_calculate_sve_address) {
+#ifndef _WIN32
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
+#endif
 
   // Shadow the `MacroAssembler` type so that the test macros work without
   // modification.
@@ -5593,7 +5595,10 @@ TEST_SVE(sve_calculate_sve_address) {
     ASSERT_EQUAL_64(0xabcd404400000000 - 48, x28);
     ASSERT_EQUAL_64(0xabcd505500000000 - (48 << 4), x29);
   }
+
+#ifndef _WIN32
 #pragma GCC diagnostic pop
+#endif
 }
 
 TEST_SVE(sve_permute_vector_unpredicated) {
@@ -7006,14 +7011,14 @@ TEST_SVE(ldr_str_p_bi) {
       // Each byte of `pattern` can be multiplied by 15 without carry.
       VIXL_ASSERT((byte * 15) <= 0xff);
 
-      middle[i] = byte * 8;                 // p8
-      middle[(2 * pl) + i] = byte * 9;      // p9
-      middle[(-3 * pl) + i] = byte * 10;    // p10
-      middle[(255 * pl) + i] = byte * 11;   // p11
-      middle[(6 * pl) + i] = byte * 12;     // p12
-      middle[(-7 * pl) + i] = byte * 13;    // p13
-      middle[(314 * pl) + i] = byte * 14;   // p14
-      middle[(-314 * pl) + i] = byte * 15;  // p15
+      middle[i] = static_cast<uint8_t>(byte * 8);                 // p8
+      middle[(2 * pl) + i] = static_cast<uint8_t>(byte * 9);      // p9
+      middle[(-3 * pl) + i] = static_cast<uint8_t>(byte * 10);    // p10
+      middle[(255 * pl) + i] = static_cast<uint8_t>(byte * 11);   // p11
+      middle[(6 * pl) + i] = static_cast<uint8_t>(byte * 12);     // p12
+      middle[(-7 * pl) + i] = static_cast<uint8_t>(byte * 13);    // p13
+      middle[(314 * pl) + i] = static_cast<uint8_t>(byte * 14);   // p14
+      middle[(-314 * pl) + i] = static_cast<uint8_t>(byte * 15);  // p15
     }
 
     ASSERT_EQUAL_MEMORY(expected, data, data_size, middle - expected);
@@ -8840,7 +8845,7 @@ static void Ldff1Helper(Test* config,
 
   unsigned esize_in_bytes = esize_in_bits / kBitsPerByte;
   unsigned msize_in_bytes = msize_in_bits / kBitsPerByte;
-  unsigned msize_in_bytes_log2 = std::log2(msize_in_bytes);
+  unsigned msize_in_bytes_log2 = static_cast<unsigned>(std::log2(msize_in_bytes));
   VIXL_ASSERT(msize_in_bits <= esize_in_bits);
 
   PRegister all = p7;
@@ -9999,7 +10004,7 @@ static void GatherLoadScalarPlusVectorHelper(Test* config,
 
   int shift = 0;
   if (is_scaled) {
-    shift = std::log2(msize_in_bytes);
+    shift = static_cast<int>(std::log2(msize_in_bytes));
     for (unsigned i = 0; i < kMaxLaneCount; i++) {
       // Ensure the offsets are the multiple of the scale factor of the
       // operation.
@@ -10703,7 +10708,7 @@ TEST_SVE(sve_st1_vec_imm) {
   // depends on VL, eg. VL128 iterates eight times, storing bytes 15 and 14
   // on the first iteration, 13 and 12 on the next, etc.
   uint64_t dlanes = config->sve_vl_in_bytes() / kDRegSizeInBytes;
-  for (int i = 15; i >= 0; i -= dlanes * kBRegSizeInBytes) {
+  for (int i = 15; i >= 0; i -= static_cast<int>(dlanes * kBRegSizeInBytes)) {
     __ St1b(z2.VnD(), p0, SVEMemOperand(z1.VnD(), i));
     __ Incd(z2.VnD());
   }
@@ -10718,7 +10723,7 @@ TEST_SVE(sve_st1_vec_imm) {
   // Repeat for wider elements.
   __ Index(z1.VnD(), x0, -2);  // Stepping by -2 for H-sized elements.
   __ Index(z2.VnD(), 0, 1);
-  for (int i = 14; i >= 0; i -= dlanes * kHRegSizeInBytes) {
+  for (int i = 14; i >= 0; i -= static_cast<int>(dlanes * kHRegSizeInBytes)) {
     __ St1h(z2.VnD(), p0, SVEMemOperand(z1.VnD(), i));
     __ Incd(z2.VnD());
   }
@@ -10728,7 +10733,7 @@ TEST_SVE(sve_st1_vec_imm) {
 
   __ Index(z1.VnD(), x0, -4);  // Stepping by -4 for S-sized elements.
   __ Index(z2.VnD(), 0, 1);
-  for (int i = 12; i >= 0; i -= dlanes * kSRegSizeInBytes) {
+  for (int i = 12; i >= 0; i -= static_cast<int>(dlanes * kSRegSizeInBytes)) {
     __ St1w(z2.VnD(), p0, SVEMemOperand(z1.VnD(), i));
     __ Incd(z2.VnD());
   }
@@ -10738,7 +10743,7 @@ TEST_SVE(sve_st1_vec_imm) {
 
   __ Index(z1.VnD(), x0, -8);  // Stepping by -8 for D-sized elements.
   __ Index(z2.VnD(), 0, 1);
-  for (int i = 8; i >= 0; i -= dlanes * kDRegSizeInBytes) {
+  for (int i = 8; i >= 0; i -= static_cast<int>(dlanes * kDRegSizeInBytes)) {
     __ St1d(z2.VnD(), p0, SVEMemOperand(z1.VnD(), i));
     __ Incd(z2.VnD());
   }
@@ -10754,7 +10759,7 @@ TEST_SVE(sve_st1_vec_imm) {
   __ Mov(x0, reinterpret_cast<uintptr_t>(data));
   __ Index(z1.VnD(), x0, 1);
   __ Index(z2.VnD(), 0x1000, 1);
-  for (int i = 0; i < 16; i += dlanes) {
+  for (int i = 0; i < 16; i += static_cast<int>(dlanes)) {
     __ St1h(z2.VnD(), p1, SVEMemOperand(z1.VnD(), i));
     __ Incd(z2.VnD());
   }
@@ -12338,11 +12343,11 @@ TEST_SVE(sve_fp_arithmetic_unpredicated_fsub) {
 
   FPBinArithHelper(config, fn, kHRegSize, zn_inputs, zm_inputs, expected_h);
 
-  uint32_t expected_s[] = {FloatToRawbits(-1000.0),
-                           FloatToRawbits(-2042.5),
-                           FloatToRawbits(-0.1),
-                           FloatToRawbits(8.625),
-                           FloatToRawbits(-10.215),
+  uint32_t expected_s[] = {FloatToRawbits(-1000.0f),
+                           FloatToRawbits(-2042.5f),
+                           FloatToRawbits(-0.1f),
+                           FloatToRawbits(8.625f),
+                           FloatToRawbits(-10.215f),
                            FloatToRawbits(kFP32PositiveInfinity),
                            FloatToRawbits(kFP32NegativeInfinity)};
 
@@ -12382,11 +12387,11 @@ TEST_SVE(sve_fp_arithmetic_unpredicated_fmul) {
 
   FPBinArithHelper(config, fn, kHRegSize, zn_inputs, zm_inputs, expected_h);
 
-  uint32_t expected_s[] = {FloatToRawbits(24576.0),
-                           FloatToRawbits(11264.0),
-                           FloatToRawbits(0.0),
-                           FloatToRawbits(-18.40625),
-                           FloatToRawbits(26.2225),
+  uint32_t expected_s[] = {FloatToRawbits(24576.0f),
+                           FloatToRawbits(11264.0f),
+                           FloatToRawbits(0.0f),
+                           FloatToRawbits(-18.40625f),
+                           FloatToRawbits(26.2225f),
                            FloatToRawbits(kFP32PositiveInfinity),
                            FloatToRawbits(kFP32PositiveInfinity)};
 
@@ -12556,15 +12561,15 @@ TEST_SVE(sve_binary_arithmetic_predicated_fdiv) {
                    zm_in,
                    exp_h);
 
-  uint32_t exp_s[] = {FloatToRawbits(0.1),
-                      FloatToRawbits(-12.0),
-                      FloatToRawbits(2.2),
+  uint32_t exp_s[] = {FloatToRawbits(0.1f),
+                      FloatToRawbits(-12.0f),
+                      FloatToRawbits(2.2f),
                       0xbdaaaaab,
-                      FloatToRawbits(4.4),
-                      FloatToRawbits(11.0),
-                      FloatToRawbits(6.6),
+                      FloatToRawbits(4.4f),
+                      FloatToRawbits(11.0f),
+                      FloatToRawbits(6.6f),
                       FloatToRawbits(kFP32PositiveInfinity),
-                      FloatToRawbits(8.8),
+                      FloatToRawbits(8.8f),
                       FloatToRawbits(kFP32NegativeInfinity)};
 
   FPBinArithHelper(config,
@@ -12726,12 +12731,12 @@ TEST_SVE(sve_binary_arithmetic_predicated_fmax_fmin_s) {
                         kFP64PositiveInfinity};
   int pg_inputs[] = {1, 1, 0, 1, 0, 1, 1, 1};
 
-  uint32_t zd_expected_max[] = {FloatToRawbits(-2.0),
-                                FloatToRawbits(8.5),
-                                FloatToRawbits(3.3),
-                                FloatToRawbits(0.01),
-                                FloatToRawbits(5.5),
-                                FloatToRawbits(300.75),
+  uint32_t zd_expected_max[] = {FloatToRawbits(-2.0f),
+                                FloatToRawbits(8.5f),
+                                FloatToRawbits(3.3f),
+                                FloatToRawbits(0.01f),
+                                FloatToRawbits(5.5f),
+                                FloatToRawbits(300.75f),
                                 FloatToRawbits(kFP32PositiveInfinity),
                                 FloatToRawbits(kFP32PositiveInfinity)};
   FPBinArithHelper(config,
@@ -12744,12 +12749,12 @@ TEST_SVE(sve_binary_arithmetic_predicated_fmax_fmin_s) {
                    zm_inputs,
                    zd_expected_max);
 
-  uint32_t zd_expected_min[] = {FloatToRawbits(-2.1),
-                                FloatToRawbits(-13.0),
-                                FloatToRawbits(3.3),
-                                FloatToRawbits(0.0),
-                                FloatToRawbits(5.5),
-                                FloatToRawbits(-4.75),
+  uint32_t zd_expected_min[] = {FloatToRawbits(-2.1f),
+                                FloatToRawbits(-13.0f),
+                                FloatToRawbits(3.3f),
+                                FloatToRawbits(0.0f),
+                                FloatToRawbits(5.5f),
+                                FloatToRawbits(-4.75f),
                                 FloatToRawbits(kFP32NegativeInfinity),
                                 FloatToRawbits(kFP32NegativeInfinity)};
   FPBinArithHelper(config,
@@ -16440,7 +16445,7 @@ TEST_SVE(sve_fadda) {
     RUN();
     // Sum of 1 .. n is n+1 * n/2, ie. n(n+1)/2.
     int n = core.GetSVELaneCount(kSRegSize);
-    ASSERT_EQUAL_FP32(2 + 3 * ((n + 1) * (n / 2)), s2);
+    ASSERT_EQUAL_FP32(static_cast<float>(2 + 3 * ((n + 1) * (n / 2))), s2);
 
     n /= 2;  // Half as many lanes.
     ASSERT_EQUAL_FP64(3 + -7 * ((n + 1) * (n / 2)), d3);
@@ -16588,9 +16593,9 @@ TEST_SVE(sve_fp_paired_across) {
     RUN();
     // Sum of 1 .. n is n+1 * n/2, ie. n(n+1)/2.
     int n = core.GetSVELaneCount(kSRegSize);
-    ASSERT_EQUAL_FP32(3 * ((n + 1) * (n / 2)), s1);
+    ASSERT_EQUAL_FP32(static_cast<float>(3 * ((n + 1) * (n / 2))), s1);
     ASSERT_EQUAL_FP32(3, s2);
-    ASSERT_EQUAL_FP32(3 * n - 3, s3);
+    ASSERT_EQUAL_FP32(static_cast<float>(3 * n - 3), s3);
 
     n /= 2;  // Half as many lanes.
     ASSERT_EQUAL_FP64(-7 * ((n + 1) * (n / 2)), d4);
@@ -18404,14 +18409,14 @@ TEST_SVE(sve_frecpx_h) {
 TEST_SVE(sve_frecpx_s) {
   uint64_t zn_inputs[] = {FloatToRawbits(kFP32PositiveInfinity),
                           FloatToRawbits(kFP32NegativeInfinity),
-                          FloatToRawbits(65504),       // Max half precision.
-                          FloatToRawbits(6.10352e-5),  // Min positive normal.
-                          FloatToRawbits(6.09756e-5),  // Max subnormal.
+                          FloatToRawbits(65504),        // Max half precision.
+                          FloatToRawbits(6.10352e-5f),  // Min positive normal.
+                          FloatToRawbits(6.09756e-5f),  // Max subnormal.
                           FloatToRawbits(
-                              5.96046e-8),       // Min positive subnormal.
-                          FloatToRawbits(5e-9),  // Not representable -> zero.
-                          FloatToRawbits(-0.0),
-                          FloatToRawbits(0.0),
+                              5.96046e-8f),       // Min positive subnormal.
+                          FloatToRawbits(5e-9f),  // Not representable -> zero.
+                          FloatToRawbits(-0.0f),
+                          FloatToRawbits(0.0f),
                           0x7f952222,   // Signalling NaN.
                           0x7fea2222};  // Quiet NaN;
 

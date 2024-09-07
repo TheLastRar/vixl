@@ -186,8 +186,8 @@ TEST(ldp_stp_double) {
 TEST(ldnp_stnp_offset_float) {
   SETUP_WITH_FEATURES(CPUFeatures::kFP);
 
-  float src[3] = {1.2, 2.3, 3.4};
-  float dst[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  float src[3] = {1.2f, 2.3f, 3.4f};
+  float dst[6] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
   uintptr_t src_base = reinterpret_cast<uintptr_t>(src);
   uintptr_t dst_base = reinterpret_cast<uintptr_t>(dst);
 
@@ -211,18 +211,18 @@ TEST(ldnp_stnp_offset_float) {
   if (CAN_RUN()) {
     RUN();
 
-    ASSERT_EQUAL_FP32(1.2, s0);
-    ASSERT_EQUAL_FP32(2.3, s1);
-    ASSERT_EQUAL_FP32(2.3, dst[0]);
-    ASSERT_EQUAL_FP32(1.2, dst[1]);
-    ASSERT_EQUAL_FP32(2.3, s2);
-    ASSERT_EQUAL_FP32(3.4, s3);
-    ASSERT_EQUAL_FP32(3.4, dst[2]);
-    ASSERT_EQUAL_FP32(2.3, dst[3]);
-    ASSERT_EQUAL_FP32(3.4, s4);
-    ASSERT_EQUAL_FP32(2.3, s5);
-    ASSERT_EQUAL_FP32(3.4, dst[4]);
-    ASSERT_EQUAL_FP32(2.3, dst[5]);
+    ASSERT_EQUAL_FP32(1.2f, s0);
+    ASSERT_EQUAL_FP32(2.3f, s1);
+    ASSERT_EQUAL_FP32(2.3f, dst[0]);
+    ASSERT_EQUAL_FP32(1.2f, dst[1]);
+    ASSERT_EQUAL_FP32(2.3f, s2);
+    ASSERT_EQUAL_FP32(3.4f, s3);
+    ASSERT_EQUAL_FP32(3.4f, dst[2]);
+    ASSERT_EQUAL_FP32(2.3f, dst[3]);
+    ASSERT_EQUAL_FP32(3.4f, s4);
+    ASSERT_EQUAL_FP32(2.3f, s5);
+    ASSERT_EQUAL_FP32(3.4f, dst[4]);
+    ASSERT_EQUAL_FP32(2.3f, dst[5]);
     ASSERT_EQUAL_64(src_base, x16);
     ASSERT_EQUAL_64(dst_base, x17);
     ASSERT_EQUAL_64(src_base + 12, x18);
@@ -282,7 +282,7 @@ template <typename T>
 void LoadFPValueHelper(T values[], int card) {
   SETUP_WITH_FEATURES(CPUFeatures::kFP);
 
-  const bool is_32bits = (sizeof(T) == 4);
+  constexpr bool is_32bits = (sizeof(T) == 4);
   const VRegister& fp_tgt = is_32bits ? VRegister(s2) : VRegister(d2);
   const Register& tgt1 = is_32bits ? Register(w1) : Register(x1);
   const Register& tgt2 = is_32bits ? Register(w2) : Register(x2);
@@ -1450,7 +1450,7 @@ static float MinMaxHelper(float n,
   }
 
   if ((n == 0.0) && (m == 0.0) && (copysign(1.0, n) != copysign(1.0, m))) {
-    return min ? -0.0 : 0.0;
+    return min ? -0.0f : 0.0f;
   }
 
   return min ? fminf(n, m) : fmaxf(n, m);
@@ -3850,7 +3850,7 @@ TEST(fcvt_xd_minmax) {
 }
 
 TEST(fcvtas) {
-  float inputs_s[] = {1.0, 1.1, 2.5, -2.5};
+  float inputs_s[] = {1.0f, 1.1f, 2.5f, -2.5f};
   double inputs_d[] = {1.0, 1.1, 2.5, -2.5};
   uint64_t expected_w[] = {1, 1, 3, 0xfffffffd};
   uint64_t expected_x[] = {1, 1, 3, 0xfffffffffffffffd};
@@ -3862,7 +3862,7 @@ TEST(fcvtas) {
 }
 
 TEST(fcvtau) {
-  float inputs_s[] = {1.0, 1.1, 2.5, -2.5, 0x100000000};
+  float inputs_s[] = {1.0f, 1.1f, 2.5f, -2.5f, 0x100000000};
   double inputs_d[] = {1.0, 1.1, 2.5, -2.5, 0x100000000};
   uint64_t expected_w[] = {1, 1, 3, 0, 0xffffffff};
   uint64_t expected_x[] = {1, 1, 3, 0, 0x100000000};
@@ -3874,7 +3874,7 @@ TEST(fcvtau) {
 }
 
 TEST(fcvtms) {
-  float inputs_s[] = {1.0, 1.1, 1.5, -1.5};
+  float inputs_s[] = {1.0f, 1.1f, 1.5f, -1.5f};
   double inputs_d[] = {1.0, 1.1, 1.5, -1.5};
   uint64_t expected_w[] = {1, 1, 1, 0xfffffffe};
   uint64_t expected_x[] = {1, 1, 1, 0xfffffffffffffffe};
@@ -3886,7 +3886,7 @@ TEST(fcvtms) {
 }
 
 TEST(fcvtmu) {
-  float inputs_s[] = {1.0, 1.1, 1.5, -1.5};
+  float inputs_s[] = {1.0f, 1.1f, 1.5f, -1.5f};
   double inputs_d[] = {1.0, 1.1, 1.5, -1.5};
   uint64_t expected_w[] = {1, 1, 1, 0};
   uint64_t expected_x[] = {1, 1, 1, 0};
@@ -3898,7 +3898,7 @@ TEST(fcvtmu) {
 }
 
 TEST(fcvtns) {
-  float inputs_s[] = {1.0, 1.1, 1.5, -1.5};
+  float inputs_s[] = {1.0f, 1.1f, 1.5f, -1.5f};
   double inputs_d[] = {1.0, 1.1, 1.5, -1.5};
   uint64_t expected_w[] = {1, 1, 2, 0xfffffffe};
   uint64_t expected_x[] = {1, 1, 2, 0xfffffffffffffffe};
@@ -3910,7 +3910,7 @@ TEST(fcvtns) {
 }
 
 TEST(fcvtnu) {
-  float inputs_s[] = {1.0, 1.1, 1.5, -1.5, 0x100000000};
+  float inputs_s[] = {1.0f, 1.1f, 1.5f, -1.5f, 0x100000000};
   double inputs_d[] = {1.0, 1.1, 1.5, -1.5, 0x100000000};
   uint64_t expected_w[] = {1, 1, 2, 0, 0xffffffff};
   uint64_t expected_x[] = {1, 1, 2, 0, 0x100000000};
@@ -3922,7 +3922,7 @@ TEST(fcvtnu) {
 }
 
 TEST(fcvtzs) {
-  float inputs_s[] = {1.0, 1.1, 1.5, -1.5};
+  float inputs_s[] = {1.0f, 1.1f, 1.5f, -1.5f};
   double inputs_d[] = {1.0, 1.1, 1.5, -1.5};
   uint64_t expected_w[] = {1, 1, 1, 0xffffffff};
   uint64_t expected_x[] = {1, 1, 1, 0xffffffffffffffff};
@@ -3934,7 +3934,7 @@ TEST(fcvtzs) {
 }
 
 TEST(fcvtzu) {
-  float inputs_s[] = {1.0, 1.1, 1.5, -1.5};
+  float inputs_s[] = {1.0f, 1.1f, 1.5f, -1.5f};
   double inputs_d[] = {1.0, 1.1, 1.5, -1.5};
   uint64_t expected_w[] = {1, 1, 1, 0};
   uint64_t expected_x[] = {1, 1, 1, 0};
@@ -4044,7 +4044,7 @@ TEST(fjcvtzs) {
 
     uint64_t value = (static_cast<uint64_t>(exponent) << 52) | mantissa;
     FjcvtzsHelper(value, expected, NoFlag);
-    FjcvtzsHelper(value | kDSignMask, (-expected) & 0xffffffff, NoFlag);
+    FjcvtzsHelper(value | kDSignMask, UnsignedNegate(expected) & 0xffffffff, NoFlag);
   }
 }
 
@@ -4285,16 +4285,16 @@ static void TestUScvtf32Helper(uint64_t in,
     float expected_ucvtf_base = RawbitsToFloat(expected_ucvtf_bits);
 
     for (int fbits = 0; fbits <= 32; fbits++) {
-      float expected_scvtf = expected_scvtf_base / std::pow(2.0f, fbits);
-      float expected_ucvtf = expected_ucvtf_base / std::pow(2.0f, fbits);
+      float expected_scvtf = static_cast<float>(expected_scvtf_base / std::pow(2.0f, fbits));
+      float expected_ucvtf = static_cast<float>(expected_ucvtf_base / std::pow(2.0f, fbits));
       ASSERT_EQUAL_FP32(expected_scvtf, results_scvtf_x[fbits]);
       ASSERT_EQUAL_FP32(expected_ucvtf, results_ucvtf_x[fbits]);
       if (cvtf_s32) ASSERT_EQUAL_FP32(expected_scvtf, results_scvtf_w[fbits]);
       if (cvtf_u32) ASSERT_EQUAL_FP32(expected_ucvtf, results_ucvtf_w[fbits]);
     }
     for (int fbits = 33; fbits <= 64; fbits++) {
-      float expected_scvtf = expected_scvtf_base / std::pow(2.0f, fbits);
-      float expected_ucvtf = expected_ucvtf_base / std::pow(2.0f, fbits);
+      float expected_scvtf = static_cast<float>(expected_scvtf_base / std::pow(2.0f, fbits));
+      float expected_ucvtf = static_cast<float>(expected_ucvtf_base / std::pow(2.0f, fbits));
       ASSERT_EQUAL_FP32(expected_scvtf, results_scvtf_x[fbits]);
       ASSERT_EQUAL_FP32(expected_ucvtf, results_ucvtf_x[fbits]);
     }
