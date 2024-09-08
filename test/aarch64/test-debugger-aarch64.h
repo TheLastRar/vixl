@@ -75,7 +75,7 @@ void GenerateDebuggerAsm(MacroAssembler* masm) {
 #define CREATE_OSTREAM()                                             \
   char ostream_filename[L_tmpnam_s];                                 \
   errno_t tmperr;                                                    \
-  tmperr = tmpnam_s(ostream_filename, L_tmpnam_s );                  \
+  tmperr = tmpnam_s(ostream_filename, L_tmpnam_s);                   \
   VIXL_ASSERT(tmperr == 0);                                          \
   /* breakpoints_hit test reads the open file via different stream*/ \
   FILE* output_stream = _fsopen(ostream_filename, "w", _SH_DENYWR)
