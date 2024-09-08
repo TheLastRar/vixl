@@ -41,6 +41,10 @@
 #include "aarch64/simulator-aarch64.h"
 #include "aarch64/test-utils-aarch64.h"
 
+#if defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP)
+#include <sys/mman.h>
+#endif
+
 namespace vixl {
 namespace aarch64 {
 
@@ -3044,7 +3048,8 @@ static void MTEStoreTagHelper(Op op,
   END();
 
   if (CAN_RUN()) {
-#if !(defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP))
+#if !(defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && \
+      defined(VIXL_HAS_SIMULATED_MMAP))
     VIXL_UNIMPLEMENTED();
 #endif
     RUN();
@@ -3223,7 +3228,8 @@ TEST(stgp_ldg) {
   END();
 
   if (CAN_RUN()) {
-#if !(defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP))
+#if !(defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && \
+      defined(VIXL_HAS_SIMULATED_MMAP))
     VIXL_UNIMPLEMENTED();
 #endif
     RUN();
