@@ -292,8 +292,11 @@ void LoadFPValueHelper(T values[], int card) {
 
   // If one of the values differ then x0 will be one.
   for (int i = 0; i < card; ++i) {
-    __ Mov(tgt1,
-           is_32bits ? FloatToRawbits(values[i]) : DoubleToRawbits(values[i]));
+    if constexpr (is_32bits) {
+      __ Mov(tgt1, FloatToRawbits(values[i]));
+    } else {
+      __ Mov(tgt1, DoubleToRawbits(values[i]));
+    }
     __ Ldr(fp_tgt, values[i]);
     __ Fmov(tgt2, fp_tgt);
     __ Cmp(tgt1, tgt2);

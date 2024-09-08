@@ -33,9 +33,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../cpu-features.h"
 #include "../globals-vixl.h"
 #include "../utils-vixl.h"
-#include "cpu-features.h"
 
 #include "abi-aarch64.h"
 #include "cpu-features-auditor-aarch64.h"
