@@ -34,6 +34,10 @@
 #include "aarch64/test-utils-aarch64.h"
 #include "test-assembler-aarch64.h"
 
+#if defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP)
+#include <sys/mman.h>
+#endif
+
 namespace vixl {
 namespace aarch64 {
 
