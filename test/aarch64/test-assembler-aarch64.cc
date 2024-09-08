@@ -2981,7 +2981,6 @@ template <typename Op>
 static void MTEStoreTagHelper(Op op,
                               AddrMode addr_mode,
                               int attr = StgNoSideEffect) {
-#if 0
   SETUP_WITH_FEATURES(CPUFeatures::kMTE);
   START();
   // This method does nothing when the size is zero. i.e. stg and st2g.
@@ -3003,7 +3002,7 @@ static void MTEStoreTagHelper(Op op,
   Register base_tag = x27;
   uint32_t* data_ptr = nullptr;
   const int data_size = 640;
-#ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
+#if defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP)
   data_ptr = reinterpret_cast<uint32_t*>(
       simulator.Mmap(NULL,
                      data_size * sizeof(uint32_t),
@@ -3129,7 +3128,7 @@ static void MTEStoreTagHelper(Op op,
   END();
 
   if (CAN_RUN()) {
-#ifndef VIXL_INCLUDE_SIMULATOR_AARCH64
+#if !(defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP))
     VIXL_UNIMPLEMENTED();
 #endif
     RUN();
@@ -3159,13 +3158,8 @@ static void MTEStoreTagHelper(Op op,
     }
   }
 
-#ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
+#if defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP)
   simulator.Munmap(data_ptr, data_size, PROT_MTE);
-#endif
-#else
-  USE(op);
-  USE(addr_mode);
-  USE(attr);
 #endif
 }
 
@@ -3194,7 +3188,6 @@ TEST(stzg_ldg) {
 }
 
 TEST(stgp_ldg) {
-#if 0
   SETUP_WITH_FEATURES(CPUFeatures::kMTE);
   START();
   // Initialize registers to zero.
@@ -3214,7 +3207,7 @@ TEST(stgp_ldg) {
   uint32_t* data_ptr = nullptr;
   const int data_size = 640;
   uint64_t init_tag = 17;
-#ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
+#if defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP)
   data_ptr = reinterpret_cast<uint32_t*>(
       simulator.Mmap(NULL,
                      data_size * sizeof(uint32_t),
@@ -3314,7 +3307,7 @@ TEST(stgp_ldg) {
   END();
 
   if (CAN_RUN()) {
-#ifndef VIXL_INCLUDE_SIMULATOR_AARCH64
+#if !(defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP))
     VIXL_UNIMPLEMENTED();
 #endif
     RUN();
@@ -3336,9 +3329,8 @@ TEST(stgp_ldg) {
     ASSERT_EQUAL_64((99UL << tag_lsb | 99UL), x15);
   }
 
-#ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
+#if defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP)
   simulator.Munmap(data_ptr, data_size, PROT_MTE);
-#endif
 #endif
 }
 
@@ -14414,10 +14406,9 @@ TEST(mops_setn) {
 }
 
 TEST(mops_setg) {
-#if 0
   SETUP_WITH_FEATURES(CPUFeatures::kMOPS, CPUFeatures::kMTE);
   uint8_t* dst_addr = nullptr;
-#ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
+#if defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP)
   const int dst_size = 32;
   dst_addr = reinterpret_cast<uint8_t*>(
       simulator.Mmap(NULL,
@@ -14461,9 +14452,8 @@ TEST(mops_setg) {
     ASSERT_EQUAL_64(0xc9c9'c9c9'c9c9'c9c9, x13);
   }
 
-#ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
+#if defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP)
   simulator.Munmap(dst_addr, dst_size, PROT_MTE);
-#endif
 #endif
 }
 
