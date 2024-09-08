@@ -139,7 +139,7 @@ options_msvc = {
 
 options_gnu = {
     'all' : { # Unconditionally processed.
-      'CCFLAGS' : ['-W3',
+      'CCFLAGS' : ['-Wall',
                    '-Werror',
                    '-fdiagnostics-show-option',
                    '-Wextra',

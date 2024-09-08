@@ -35,6 +35,7 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
+// Must be after Windows.h
 #include <Memoryapi.h>
 #else
 #include <sys/mman.h>
@@ -8845,7 +8846,8 @@ static void Ldff1Helper(Test* config,
 
   unsigned esize_in_bytes = esize_in_bits / kBitsPerByte;
   unsigned msize_in_bytes = msize_in_bits / kBitsPerByte;
-  unsigned msize_in_bytes_log2 = static_cast<unsigned>(std::log2(msize_in_bytes));
+  unsigned msize_in_bytes_log2 =
+      static_cast<unsigned>(std::log2(msize_in_bytes));
   VIXL_ASSERT(msize_in_bits <= esize_in_bits);
 
   PRegister all = p7;

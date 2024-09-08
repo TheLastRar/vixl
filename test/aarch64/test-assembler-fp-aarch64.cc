@@ -4044,7 +4044,9 @@ TEST(fjcvtzs) {
 
     uint64_t value = (static_cast<uint64_t>(exponent) << 52) | mantissa;
     FjcvtzsHelper(value, expected, NoFlag);
-    FjcvtzsHelper(value | kDSignMask, UnsignedNegate(expected) & 0xffffffff, NoFlag);
+    FjcvtzsHelper(value | kDSignMask,
+                  UnsignedNegate(expected) & 0xffffffff,
+                  NoFlag);
   }
 }
 
@@ -4285,16 +4287,20 @@ static void TestUScvtf32Helper(uint64_t in,
     float expected_ucvtf_base = RawbitsToFloat(expected_ucvtf_bits);
 
     for (int fbits = 0; fbits <= 32; fbits++) {
-      float expected_scvtf = static_cast<float>(expected_scvtf_base / std::pow(2.0f, fbits));
-      float expected_ucvtf = static_cast<float>(expected_ucvtf_base / std::pow(2.0f, fbits));
+      float expected_scvtf =
+          static_cast<float>(expected_scvtf_base / std::pow(2.0f, fbits));
+      float expected_ucvtf =
+          static_cast<float>(expected_ucvtf_base / std::pow(2.0f, fbits));
       ASSERT_EQUAL_FP32(expected_scvtf, results_scvtf_x[fbits]);
       ASSERT_EQUAL_FP32(expected_ucvtf, results_ucvtf_x[fbits]);
       if (cvtf_s32) ASSERT_EQUAL_FP32(expected_scvtf, results_scvtf_w[fbits]);
       if (cvtf_u32) ASSERT_EQUAL_FP32(expected_ucvtf, results_ucvtf_w[fbits]);
     }
     for (int fbits = 33; fbits <= 64; fbits++) {
-      float expected_scvtf = static_cast<float>(expected_scvtf_base / std::pow(2.0f, fbits));
-      float expected_ucvtf = static_cast<float>(expected_ucvtf_base / std::pow(2.0f, fbits));
+      float expected_scvtf =
+          static_cast<float>(expected_scvtf_base / std::pow(2.0f, fbits));
+      float expected_ucvtf =
+          static_cast<float>(expected_ucvtf_base / std::pow(2.0f, fbits));
       ASSERT_EQUAL_FP32(expected_scvtf, results_scvtf_x[fbits]);
       ASSERT_EQUAL_FP32(expected_ucvtf, results_ucvtf_x[fbits]);
     }

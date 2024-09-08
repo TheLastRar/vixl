@@ -4875,7 +4875,7 @@ bool Simulator::CanReadMemory(uintptr_t address, size_t size) {
   return can_read;
 #else
   // To simulate fault-tolerant loads, we need to know what host addresses we
-  // can access without generating a real fault. 
+  // can access without generating a real fault
   // The pipe code above is almost but not fully compatible with Windows
   // Instead, use the platform specific API VirtualQuery()
   //
@@ -4886,25 +4886,27 @@ bool Simulator::CanReadMemory(uintptr_t address, size_t size) {
 
   size_t checked = 0;
   while (can_read && (checked < size)) {
-    size_t result = VirtualQuery(reinterpret_cast<void*>(address + checked), &pageInfo, sizeof(pageInfo));
+    size_t result = VirtualQuery(reinterpret_cast<void*>(address + checked),
+                                 &pageInfo,
+                                 sizeof(pageInfo));
 
-    if (result < 0)
-    {
+    if (result < 0) {
       can_read = false;
       break;
     }
 
-    if (pageInfo.State != MEM_COMMIT)
-    {
+    if (pageInfo.State != MEM_COMMIT) {
       can_read = false;
       break;
     }
 
-    if (pageInfo.Protect == PAGE_NOACCESS || pageInfo.Protect == PAGE_EXECUTE)
-    {
+    if (pageInfo.Protect == PAGE_NOACCESS || pageInfo.Protect == PAGE_EXECUTE) {
       can_read = false;
+      break;
     }
-    checked += pageInfo.RegionSize - ((address + checked) - reinterpret_cast<uintptr_t>(pageInfo.BaseAddress));
+    checked += pageInfo.RegionSize -
+               ((address + checked) -
+                reinterpret_cast<uintptr_t>(pageInfo.BaseAddress));
   }
 
   return can_read;
