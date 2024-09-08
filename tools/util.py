@@ -32,6 +32,7 @@ import operator
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 
@@ -62,10 +63,10 @@ def ensure_dir(path_name):
 
 # Check that the specified program is available.
 def require_program(program_name):
-  rc, out = getstatusoutput('which %s' % program_name)
-  if rc != 0:
+  path = shutil.which(program_name)
+  if not path:
     print('ERROR: The required program %s was not found.' % program_name)
-    sys.exit(rc)
+    sys.exit(1)
 
 def relrealpath(path, start=os.getcwd()):
   return os.path.relpath(os.path.realpath(path), start)
@@ -77,13 +78,23 @@ def GetCompilerDirectives(env):
   # Pass the CXXFLAGS variables to the compile, in case we've used "-m32" to
   # compile for i386.
   if env['CXXFLAGS']:
-    args.append(str(env['CXXFLAGS']))
-  args += ['-E', '-dM', '-']
+    args.append(env.subst('$CXXFLAGS'))
+
+  if env['compiler'] == 'cl':
+    open(os.path.join(config.dir_build, 'dummy.cc'), 'a').close()
+    args += ['/nologo', '/Zc:preprocessor', '/PD', '/E',
+             os.path.join(config.dir_build, 'dummy.cc')]
+  else:
+    args += ['-E', '-dM', '-']
 
   # Instruct the compiler to dump all its preprocessor macros.
   dump = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                          universal_newlines=True)
+                          stderr=subprocess.PIPE, universal_newlines=True)
   out, _ = dump.communicate()
+
+  if env['compiler'] == 'cl':
+    os.remove(os.path.join(config.dir_build, 'dummy.cc'))
+
   return {
     # Extract the macro name as key and value as element.
     match.group(1): match.group(2)
@@ -103,11 +114,19 @@ def GetHostArch(env):
   directives = GetCompilerDirectives(env)
   if "__x86_64__" in directives:
     return "x86_64"
+  if "_M_AMD64" in directives and "_M_ARM64EC" not in directives:
+    return "x86_64"
   elif "__i386__" in directives:
     return "i386"
   elif "__arm__" in directives:
     return "aarch32"
+  elif "_M_ARM" in directives:
+    return "aarch32"
   elif "__aarch64__" in directives:
+    return "aarch64"
+  elif "_M_ARM64" in directives:
+    return "aarch64"
+  elif "_M_ARM64EC" in directives:
     return "aarch64"
   else:
     raise Exception("Unsupported architecture")
@@ -125,6 +144,11 @@ class CompilerInformation(object):
       major = int(directives['__GNUC__'])
       minor = int(directives['__GNUC_MINOR__'])
       self.compiler = 'gcc'
+      self.version = '{}.{}'.format(major, minor)
+    elif '_MSC_VER' in directives:
+      major = int(directives['_MSC_VER']) // 100
+      minor = int(directives['_MSC_VER']) - (major * 100)
+      self.compiler = 'cl'
       self.version = '{}.{}'.format(major, minor)
     else:
       # Allow other compilers to be used for building VIXL. However, one would
