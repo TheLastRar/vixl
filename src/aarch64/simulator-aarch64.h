@@ -2926,7 +2926,8 @@ class Simulator : public DecoderVisitor {
     return (addr & ~(UINT64_C(0xf) << 56)) | (tag << 56);
   }
 
-#if 0
+#if __linux__
+#define VIXL_HAS_SIMULATED_MMAP
   // Create or remove a mapping with memory protection. Memory attributes such
   // as MTE and BTI are represented by metadata in Simulator.
   void* Mmap(

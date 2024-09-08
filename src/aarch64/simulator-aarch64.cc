@@ -15221,7 +15221,7 @@ void Simulator::DoRestoreCPUFeatures(const Instruction* instr) {
   saved_cpu_features_.pop_back();
 }
 
-/*
+#ifdef VIXL_HAS_SIMULATED_MMAP
 void* Simulator::Mmap(
     void* address, size_t length, int prot, int flags, int fd, off_t offset) {
   // The underlying system `mmap` in the simulated environment doesn't recognize
@@ -15254,7 +15254,7 @@ int Simulator::Munmap(void* address, size_t length, int prot) {
 
   return munmap(address, length);
 }
-*/
+#endif  // VIXL_HAS_SIMULATED_MMAP
 
 }  // namespace aarch64
 }  // namespace vixl

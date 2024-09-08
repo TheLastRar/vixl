@@ -37,9 +37,8 @@
 namespace vixl {
 namespace aarch64 {
 
-#ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
+#if defined(VIXL_INCLUDE_SIMULATOR_AARCH64) && defined(VIXL_HAS_SIMULATED_MMAP)
 TEST(test_metadata_mte) {
-#if 0
   SETUP_WITH_FEATURES(CPUFeatures::kMTE);
   size_t data_size = 320;
   void* tagged_address = simulator.Mmap(NULL,
@@ -70,12 +69,10 @@ TEST(test_metadata_mte) {
   }
 
   simulator.Munmap(tagged_address, data_size, PROT_MTE);
-#endif
 }
 
 #ifdef VIXL_NEGATIVE_TESTING
 TEST(test_metadata_mte_neg) {
-#if 0
   CPUFeatures features(CPUFeatures::kMTE);
 
   SETUP_WITH_FEATURES(features);
@@ -123,7 +120,6 @@ TEST(test_metadata_mte_neg) {
   }
 
   simulator.Munmap(tagged_address, data_size, PROT_MTE);
-#endif
 }
 #endif  // VIXL_NEGATIVE_TESTING
 #endif  // VIXL_INCLUDE_SIMULATOR_AARCH64
