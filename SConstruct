@@ -106,8 +106,10 @@ options_msvc = {
                    '/w34459', # Declaration hides global declaration
                    '/w34487', # Function matches inherited non-virtual method but is not marked 'new'
                    '/wd4065', # Surpress switch statement contains 'default' but no 'case' labels
+                   '/D_CRT_SECURE_NO_WARNINGS', # Surpress fopen warnings
+                   '/D_REGEX_MAX_STACK_COUNT=5000L', # Needed for trace_full/partial tests
                    '/bigobj'], # Needed for tests
-      # Needed by unaligned_single_copy_atomicity_negative test
+      # Needed by unaligned_single_copy_atomicity_negative and trace_full/partial tests
       'LINKFLAGS' : ['/STACK:8388608'], 
       'CPPPATH' : [config.dir_src_vixl]
       },
