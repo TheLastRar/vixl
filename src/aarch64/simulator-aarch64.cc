@@ -44,6 +44,12 @@
 #include <unistd.h>
 #endif
 
+#ifdef _MSC_VER
+#define VIXL_SYNC() MemoryBarrier()
+#else
+#define VIXL_SYNC() __sync_synchronize()
+#endif
+
 namespace vixl {
 namespace aarch64 {
 
@@ -4266,7 +4272,7 @@ void Simulator::LoadAcquireRCpcUnscaledOffsetHelper(const Instruction* instr) {
   WriteRegister<T1>(rt, static_cast<T1>(value));
 
   // load-acquire.
-  std::atomic_thread_fence(std::memory_order_acquire);
+  VIXL_SYNC();
 
   LogRead(rt, GetPrintRegisterFormat(element_size), address);
 }
@@ -4291,7 +4297,7 @@ void Simulator::StoreReleaseUnscaledOffsetHelper(const Instruction* instr) {
   }
 
   // store-release.
-  std::atomic_thread_fence(std::memory_order_release);
+  VIXL_SYNC();
 
   if (!MemWrite<T>(address, ReadRegister<T>(rt))) return;
 
@@ -4737,13 +4743,13 @@ void Simulator::CompareAndSwapHelper(const Instruction* instr) {
 
   if (is_acquire) {
     // load-acquire.
-    std::atomic_thread_fence(std::memory_order_acquire);
+    VIXL_SYNC();
   }
 
   if (data == comparevalue) {
     if (is_release) {
       // store-release.
-      std::atomic_thread_fence(std::memory_order_release);
+      VIXL_SYNC();
     }
     if (!MemWrite<T>(address, newvalue)) return;
     LogWrite(rt, GetPrintRegisterFormatForSize(element_size), address);
@@ -4786,7 +4792,7 @@ void Simulator::CompareAndSwapPairHelper(const Instruction* instr) {
 
   if (is_acquire) {
     // load-acquire.
-    std::atomic_thread_fence(std::memory_order_acquire);
+    VIXL_SYNC();
   }
 
   bool same =
@@ -4794,7 +4800,7 @@ void Simulator::CompareAndSwapPairHelper(const Instruction* instr) {
   if (same) {
     if (is_release) {
       // store-release.
-      std::atomic_thread_fence(std::memory_order_release);
+      VIXL_SYNC();
     }
 
     if (!MemWrite<T>(address, newvalue_low)) return;
@@ -5063,7 +5069,7 @@ void Simulator::VisitLoadStoreExclusive(const Instruction* instr) {
 
         if (is_acquire_release) {
           // Approximate load-acquire by issuing a full barrier after the load.
-          std::atomic_thread_fence(std::memory_order_acq_rel);
+          VIXL_SYNC();
         }
 
         PrintRegisterFormat format = GetPrintRegisterFormatForSize(reg_size);
@@ -5075,7 +5081,7 @@ void Simulator::VisitLoadStoreExclusive(const Instruction* instr) {
         if (is_acquire_release) {
           // Approximate store-release by issuing a full barrier before the
           // store.
-          std::atomic_thread_fence(std::memory_order_acq_rel);
+          VIXL_SYNC();
         }
 
         bool do_store = true;
@@ -5168,7 +5174,7 @@ void Simulator::AtomicMemorySimpleHelper(const Instruction* instr) {
 
   if (is_acquire) {
     // Approximate load-acquire by issuing a full barrier after the load.
-    std::atomic_thread_fence(std::memory_order_acquire);
+    VIXL_SYNC();
   }
 
   T result = 0;
@@ -5202,7 +5208,7 @@ void Simulator::AtomicMemorySimpleHelper(const Instruction* instr) {
 
   if (is_release) {
     // store-release.
-    std::atomic_thread_fence(std::memory_order_release);
+    VIXL_SYNC();
   }
 
   WriteRegister<T>(rt, data, NoRegLog);
@@ -5237,12 +5243,12 @@ void Simulator::AtomicMemorySwapHelper(const Instruction* instr) {
 
   if (is_acquire) {
     // load-acquire.
-    std::atomic_thread_fence(std::memory_order_acquire);
+    VIXL_SYNC();
   }
 
   if (is_release) {
     // store-release.
-    std::atomic_thread_fence(std::memory_order_release);
+    VIXL_SYNC();
   }
   if (!MemWrite<T>(address, ReadRegister<T>(rs))) return;
 
@@ -5268,7 +5274,7 @@ void Simulator::LoadAcquireRCpcHelper(const Instruction* instr) {
   WriteRegister<T>(rt, value);
 
   // Approximate load-acquire by issuing a full barrier after the load.
-  std::atomic_thread_fence(std::memory_order_seq_cst);
+  VIXL_SYNC();
 
   LogRead(rt, GetPrintRegisterFormatForSize(element_size), address);
 }
@@ -7104,7 +7110,7 @@ void Simulator::VisitSystem(const Instruction* instr) {
     case "dsb_bo_barriers"_h:
     case "dmb_bo_barriers"_h:
     case "isb_bi_barriers"_h:
-      std::atomic_thread_fence(std::memory_order_seq_cst);
+      VIXL_SYNC();
       break;
     case "sys_cr_systeminstrs"_h: {
       uint64_t rt = ReadXRegister(instr->GetRt());
