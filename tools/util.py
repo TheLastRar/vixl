@@ -81,9 +81,8 @@ def GetCompilerDirectives(env):
     args.append(env.subst('$CXXFLAGS'))
 
   if env['compiler'] == 'cl':
-    open(os.path.join(config.dir_build, 'dummy.cc'), 'a').close()
-    args += ['/nologo', '/Zc:preprocessor', '/PD', '/E',
-             os.path.join(config.dir_build, 'dummy.cc')]
+    open('dummy.cc', 'a').close()
+    args += ['/nologo', '/Zc:preprocessor', '/PD', '/E', 'dummy.cc']
   else:
     args += ['-E', '-dM', '-']
 
@@ -93,7 +92,7 @@ def GetCompilerDirectives(env):
   out, _ = dump.communicate()
 
   if env['compiler'] == 'cl':
-    os.remove(os.path.join(config.dir_build, 'dummy.cc'))
+    os.remove('dummy.cc')
 
   return {
     # Extract the macro name as key and value as element.
