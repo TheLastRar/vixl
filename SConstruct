@@ -111,7 +111,7 @@ options_msvc = {
                    '/w34458', # Declaration hides class member
                    '/w34459', # Declaration hides global declaration
                    '/w34487', # Function matches inherited non-virtual method but is not marked 'new'
-                   '/wd4065'], # Surpress switch statement contains 'default' but no 'case' labels
+                   '/wd4065'], # Suppress switch statement contains 'default' but no 'case' labels
       'CPPPATH' : [config.dir_src_vixl]
       },
 #   'build_option:value' : {
