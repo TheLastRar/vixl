@@ -117,7 +117,7 @@ options_msvc = {
 #     'environment_key' : 'values to append'
 #     },
     'mode:debug' : {
-      'CCFLAGS' : ['-DVIXL_DEBUG', '/Od']
+      'CCFLAGS' : ['-DVIXL_DEBUG', '/Od', '/MDd']
       },
     'mode:release' : {
       'CCFLAGS' : ['/O2',
@@ -129,8 +129,8 @@ options_msvc = {
       'CCFLAGS' : ['-DVIXL_INCLUDE_SIMULATOR_AARCH64'],
       },
     'symbols:on' : {
-      'CCFLAGS' : ['/Zi',
-                   '/Fd${TARGET}.pdb'],
+      'CCPDBFLAGS' : ['/Zi',
+                      '/Fd${TARGET}.pdb'],
       'LINKFLAGS' : ['/DEBUG']
       }
 #   No undefined sanitizer
